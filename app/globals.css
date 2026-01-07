@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #e0e0e0;
+  --neon-magenta: #ff00ff;
+  --neon-cyan: #00ffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-neon: var(--neon-magenta);
+  --color-neon-cyan: var(--neon-cyan);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  cursor: none;
+}
+
+@media (hover: none),
+(pointer: coarse) {
+  * {
+    cursor: auto !important;
+  }
+}
+
+::selection {
+  background: var(--neon-magenta);
+  color: #000;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-magenta);
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%) scaleX(0);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0) scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px var(--neon-magenta), 0 0 10px var(--neon-magenta),
+      0 0 15px var(--neon-magenta);
+  }
+
+  50% {
+    box-shadow: 0 0 10px var(--neon-magenta), 0 0 20px var(--neon-magenta),
+      0 0 30px var(--neon-magenta);
+  }
+}
+
+@keyframes progress-stripe {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 40px 0;
+  }
+}
+
+@keyframes glitch {
+
+  0%,
+  100% {
+    transform: translate(0);
+    filter: none;
+  }
+
+  20% {
+    transform: translate(-2px, 2px);
+    filter: hue-rotate(90deg);
+  }
+
+  40% {
+    transform: translate(2px, -2px);
+    filter: brightness(1.5);
+  }
+
+  60% {
+    transform: translate(-1px, 1px);
+  }
+
+  80% {
+    transform: translate(1px, -1px);
+    filter: hue-rotate(-90deg);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-glitch {
+  animation: glitch 0.3s ease-in-out;
+}
+
+/* Upload Dropzone Styling */
+.ut-button[data-state="ready"] {
+  background: linear-gradient(135deg, #ff00ff, #cc00cc);
+  border: 1px solid #ff00ff;
+}
+
+.ut-button[data-state="uploading"] {
+  background: linear-gradient(135deg, #ff00ff44, #cc00cc44);
+}
+
+.ut-allowed-content {
+  color: #888;
+}
+
+/* Uploadthing Custom Overrides */
+[data-ut-element="button"] {
+  background: linear-gradient(135deg, #ff00ff, #cc00cc) !important;
+  border: 1px solid #ff00ff !important;
+  font-family: var(--font-mono), monospace !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  transition: all 0.3s ease !important;
+}
+
+[data-ut-element="button"]:hover {
+  box-shadow: 0 0 20px #ff00ff66 !important;
+  transform: scale(1.02) !important;
+}
