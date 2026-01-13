@@ -17,6 +17,28 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
   },
+  openGraph: {
+    title: "UPLOADER // SYSTEM_READY",
+    description: "Cybernetic File Upload Protocol - pcstyle",
+    url: "https://upload.pcstyle.dev",
+    siteName: "UPLOADER",
+    images: [
+      {
+        url: "https://og.pcstyle.dev/api/og?title=UPLOADER&subtitle=Cybernetic%20File%20Upload&icon=upload&theme=cyan",
+        width: 1200,
+        height: 630,
+        alt: "Uploader Preview",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "UPLOADER // SYSTEM_READY",
+    description: "Cybernetic File Upload Protocol - pcstyle",
+    images: ["https://og.pcstyle.dev/api/og?title=UPLOADER&subtitle=Cybernetic%20File%20Upload&icon=upload&theme=cyan"],
+  },
 };
 
 export default function RootLayout({
