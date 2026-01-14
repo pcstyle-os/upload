@@ -1,74 +1,42 @@
 "use client";
+import React, { useState, useEffect } from 'react';
 
-import React, { useState, useEffect } from "react";
+const useMousePosition = () => {
+    const [mouse, setMouse] = useState({ x: 0, y: 0 });
+    useEffect(() => {
+        const handle = (e: MouseEvent) => setMouse({ x: e.clientX, y: e.clientY });
+        window.addEventListener('mousemove', handle);
+        return () => window.removeEventListener('mousemove', handle);
+    }, []);
+    return mouse;
+};
 
 export const NeuralCursor = () => {
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const [isVisible, setIsVisible] = useState(false);
-    const [isClicking, setIsClicking] = useState(false);
+    const mouse = useMousePosition();
+    const [delayedMouse, setDelayedMouse] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
-        // Check for touch device
-        if ("ontouchstart" in window) return;
-
-        const handleMouseMove = (e: MouseEvent) => {
-            setPosition({ x: e.clientX, y: e.clientY });
-            setIsVisible(true);
-        };
-
-        const handleMouseDown = () => setIsClicking(true);
-        const handleMouseUp = () => setIsClicking(false);
-        const handleMouseLeave = () => setIsVisible(false);
-
-        window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mousedown", handleMouseDown);
-        window.addEventListener("mouseup", handleMouseUp);
-        document.addEventListener("mouseleave", handleMouseLeave);
-
-        return () => {
-            window.removeEventListener("mousemove", handleMouseMove);
-            window.removeEventListener("mousedown", handleMouseDown);
-            window.removeEventListener("mouseup", handleMouseUp);
-            document.removeEventListener("mouseleave", handleMouseLeave);
-        };
-    }, []);
-
-    if (!isVisible) return null;
+        const timeout = setTimeout(() => setDelayedMouse(mouse), 50);
+        return () => clearTimeout(timeout);
+    }, [mouse]);
 
     return (
-        <>
-            {/* Main cursor */}
+        <div className="hidden lg:block pointer-events-none fixed inset-0 z-[500]">
             <div
-                className="fixed pointer-events-none z-[10000] transition-transform duration-75"
-                style={{
-                    left: position.x,
-                    top: position.y,
-                    transform: `translate(-50%, -50%) scale(${isClicking ? 0.7 : 1})`,
-                }}
-            >
-                <div
-                    className={`w-4 h-4 border-2 border-[#ff00ff] rotate-45 transition-all duration-150 ${isClicking ? "bg-[#ff00ff]" : "bg-transparent"
-                        }`}
-                    style={{
-                        boxShadow: isClicking
-                            ? "0 0 20px #ff00ff, 0 0 40px #ff00ff"
-                            : "0 0 10px #ff00ff66",
-                    }}
+                className="absolute w-4 h-4 border border-[#ff00ff] rounded-full transition-transform duration-75 ease-out"
+                style={{ transform: `translate(${mouse.x - 8}px, ${mouse.y - 8}px)` }}
+            />
+            <div
+                className="absolute w-2 h-2 bg-[#ff00ff] rounded-full blur-[2px] opacity-50"
+                style={{ transform: `translate(${delayedMouse.x - 4}px, ${delayedMouse.y - 4}px)` }}
+            />
+            <svg className="absolute inset-0 w-full h-full">
+                <line
+                    x1={mouse.x} y1={mouse.y}
+                    x2={delayedMouse.x} y2={delayedMouse.y}
+                    stroke="#ff00ff" strokeWidth="1" strokeOpacity="0.2"
                 />
-            </div>
-
-            {/* Trailing effect */}
-            <div
-                className="fixed pointer-events-none z-[9999] opacity-50"
-                style={{
-                    left: position.x,
-                    top: position.y,
-                    transform: "translate(-50%, -50%)",
-                    transition: "all 0.15s ease-out",
-                }}
-            >
-                <div className="w-8 h-8 border border-[#ff00ff]/30 rotate-45" />
-            </div>
-        </>
+            </svg>
+        </div>
     );
 };
