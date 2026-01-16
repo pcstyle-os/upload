@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://cubic.dev/schema/cubic-repository-config.schema.json
+
+version: 1
+
+reviews:
+  enabled: true
+  sensitivity: medium
+  custom_instructions: |
+    Centralized micro-services (Short, Uploader, Paste, QR).
+    Maintain consistent PCSTYLE branding and lean code architecture.
+    Technology: Next.js + Convex.
+
+  ignore:
+    files:
+      - node_modules/**
+      - .next/**
+      - .vercel/**
