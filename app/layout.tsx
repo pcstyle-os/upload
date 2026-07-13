@@ -1,33 +1,30 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { NeuralCursor } from "@/components/ui/NeuralCursor";
-import { CRTOverlay } from "@/components/ui/CRTOverlay";
-import { MatrixBackground } from "@/components/ui/MatrixBackground";
 
 const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-geist-mono",
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-  weight: ["100", "400", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "UPLOADER // SYSTEM_READY",
-  description: "Cybernetic File Upload Protocol - pcstyle",
+  title: "~/upload · pcstyle",
+  description: "file uploads for pcstyle.dev — drop it, get a link.",
   icons: {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "UPLOADER // SYSTEM_READY",
-    description: "Cybernetic File Upload Protocol - pcstyle",
+    title: "~/upload · pcstyle",
+    description: "file uploads for pcstyle.dev — drop it, get a link.",
     url: "https://upload.pcstyle.dev",
-    siteName: "UPLOADER",
+    siteName: "upload.pcstyle.dev",
     images: [
       {
-        url: "https://og.pcstyle.dev/api/og?title=UPLOADER&subtitle=Cybernetic%20File%20Upload&icon=upload&theme=cyan",
+        url: "https://og.pcstyle.dev/api/og?title=upload&subtitle=drop%20it%2C%20get%20a%20link&icon=upload&theme=magenta",
         width: 1200,
         height: 630,
-        alt: "Uploader Preview",
+        alt: "upload.pcstyle.dev",
       },
     ],
     locale: "en_US",
@@ -35,9 +32,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "UPLOADER // SYSTEM_READY",
-    description: "Cybernetic File Upload Protocol - pcstyle",
-    images: ["https://og.pcstyle.dev/api/og?title=UPLOADER&subtitle=Cybernetic%20File%20Upload&icon=upload&theme=cyan"],
+    title: "~/upload · pcstyle",
+    description: "file uploads for pcstyle.dev — drop it, get a link.",
+    images: [
+      "https://og.pcstyle.dev/api/og?title=upload&subtitle=drop%20it%2C%20get%20a%20link&icon=upload&theme=magenta",
+    ],
   },
 };
 
@@ -48,11 +47,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${jetbrainsMono.variable} antialiased bg-black`}>
-        <MatrixBackground />
-        <CRTOverlay />
-        <div className="relative z-10">{children}</div>
-        <NeuralCursor />
+      <body className={`${jetbrainsMono.variable} antialiased`}>
+        {children}
       </body>
     </html>
   );

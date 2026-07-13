@@ -1,133 +1,119 @@
-import { CyberUploadZone } from "@/components/CyberUploadZone";
-import { Upload, Zap, Shield, Clock } from "lucide-react";
+import { UploadZone } from "@/components/UploadZone";
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-4 mb-10">
+      <span className="text-sm text-faint">
+        <span className="text-accent-dim">##</span> {children}
+      </span>
+      <div className="flex-1 h-px bg-hairline" />
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="border-b border-[#ff00ff]/20 bg-black/95 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4 group">
-            <div className="w-10 h-10 bg-[#ff00ff] flex items-center justify-center text-black font-black text-xl shadow-[0_0_15px_#ff00ff66] transition-all group-hover:shadow-[0_0_25px_#ff00ff]">
-              <Upload className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight uppercase group-hover:text-[#ff00ff] transition-colors">
-                uploader<span className="text-[#ff00ff]/40">.pcstyle</span>
-              </h1>
-              <p className="text-xs text-gray-600 uppercase tracking-[0.3em] font-mono">
-                FILE_TRANSFER_PROTOCOL
-              </p>
-            </div>
-          </div>
-
-          <div className="hidden md:flex items-center gap-6 text-xs text-gray-500 font-mono uppercase tracking-wider">
-            <span className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              SYSTEM_ONLINE
-            </span>
-            <span>v1.0.0</span>
-          </div>
-        </div>
+    <main className="min-h-screen">
+      {/* nav */}
+      <header className="max-w-2xl mx-auto px-6 py-6 flex items-center justify-between text-sm">
+        <a href="https://pcstyle.dev" className="text-foreground">
+          <span className="text-faint">~/</span>
+          <span className="font-semibold">pcstyle</span>
+          <span className="text-faint">/upload</span>
+        </a>
+        <nav className="flex items-center gap-6 text-muted">
+          <a href="https://pcstyle.dev" className="hover:text-foreground transition-colors">
+            home
+          </a>
+          <a
+            href="https://github.com/pcstyle-os/upload"
+            className="hover:text-foreground transition-colors"
+          >
+            github
+          </a>
+        </nav>
       </header>
 
-      {/* Hero Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-block">
-            <span className="px-4 py-1 bg-[#ff00ff]/10 border border-[#ff00ff]/30 text-[#ff00ff] text-xs font-mono uppercase tracking-[0.3em] rounded-full">
-              SECURE • FAST • RELIABLE
+      {/* hero */}
+      <section className="max-w-2xl mx-auto px-6 pt-24 pb-16">
+        <p className="text-sm text-accent mb-4">
+          <span className="text-accent-dim">→</span> upload
+        </p>
+        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mb-8">
+          Drop it. Get a link.
+        </h1>
+        <p className="text-muted leading-relaxed max-w-md">
+          file uploads for <span className="text-foreground">pcstyle.dev</span>:
+          images, videos and PDFs, straight to the CDN. no accounts, no fuss —
+          a permanent URL in seconds.
+        </p>
+        <div className="flex flex-wrap gap-2 mt-8">
+          {["images", "videos", "pdf", "up to 256mb"].map((tag) => (
+            <span
+              key={tag}
+              className="px-2.5 py-0.5 text-xs text-accent border border-accent-dim/60 rounded"
+            >
+              {tag}
             </span>
-          </div>
-
-          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tight">
-            <span className="text-white">CYBERNETIC</span>
-            <br />
-            <span className="text-[#ff00ff]">FILE UPLOAD</span>
-          </h2>
-
-          <p className="text-gray-400 max-w-2xl mx-auto font-mono text-sm leading-relaxed">
-            High-performance file transfer protocol powered by UploadThing.
-            Upload images, videos, and documents with enterprise-grade security
-            and lightning-fast CDN delivery.
-          </p>
+          ))}
         </div>
       </section>
 
-      {/* Upload Zone */}
-      <section className="px-6 pb-20">
-        <CyberUploadZone />
+      {/* upload */}
+      <section className="max-w-2xl mx-auto px-6 pb-24">
+        <SectionLabel>drop zone</SectionLabel>
+        <UploadZone />
       </section>
 
-      {/* Features */}
-      <section className="py-20 px-6 border-t border-[#ff00ff]/10">
-        <div className="max-w-5xl mx-auto">
-          <h3 className="text-center text-xs text-gray-600 uppercase tracking-[0.5em] mb-12 font-mono">
-            PROTOCOL_CAPABILITIES
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Zap,
-                title: "BLAZING FAST",
-                description:
-                  "Global CDN distribution ensures your files are delivered at maximum velocity.",
-              },
-              {
-                icon: Shield,
-                title: "SECURE TRANSFER",
-                description:
-                  "End-to-end encryption with enterprise-grade security protocols.",
-              },
-              {
-                icon: Clock,
-                title: "INSTANT ACCESS",
-                description:
-                  "Files are immediately available via permanent, shareable URLs.",
-              },
-            ].map((feature, index) => (
-              <div
-                key={feature.title}
-                className="p-6 bg-black/50 border border-[#ff00ff]/20 rounded-lg backdrop-blur-sm hover:border-[#ff00ff]/50 transition-all group"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="p-3 bg-[#ff00ff]/10 rounded-lg w-fit mb-4 group-hover:bg-[#ff00ff]/20 transition-colors">
-                  <feature.icon className="w-6 h-6 text-[#ff00ff]" />
-                </div>
-                <h4 className="text-white font-bold uppercase tracking-wider mb-2">
-                  {feature.title}
-                </h4>
-                <p className="text-gray-500 text-sm font-mono leading-relaxed">
-                  {feature.description}
-                </p>
+      {/* how it works */}
+      <section className="max-w-2xl mx-auto px-6 pb-24">
+        <SectionLabel>how it works</SectionLabel>
+        <ol className="space-y-0">
+          {[
+            {
+              n: "01",
+              title: "drop or browse",
+              body: "drag files into the zone or pick them from disk. they queue up locally first — nothing leaves your machine yet.",
+            },
+            {
+              n: "02",
+              title: "upload",
+              body: "one click sends the queue to UploadThing. files land on a global CDN with enterprise-grade storage behind them.",
+            },
+            {
+              n: "03",
+              title: "share",
+              body: "every file gets a permanent URL. copy it, open it, or clear it from the list — the link keeps working either way.",
+            },
+          ].map((step) => (
+            <li
+              key={step.n}
+              className="grid grid-cols-[3rem_1fr] gap-2 py-6 border-t border-hairline first:border-t-0"
+            >
+              <span className="text-sm text-accent-dim">{step.n}</span>
+              <div>
+                <h3 className="font-semibold mb-2">{step.title}</h3>
+                <p className="text-sm text-muted leading-relaxed">{step.body}</p>
               </div>
-            ))}
-          </div>
-        </div>
+            </li>
+          ))}
+        </ol>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-6 border-t border-[#ff00ff]/10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <p className="text-[10px] text-[#ff00ff] font-black uppercase tracking-[0.5em] opacity-30">
-              © 2025 pcstyle.dev
-            </p>
-            <span className="text-[10px] text-gray-800 uppercase tracking-widest font-mono">
-              PROTOCOL_RESERVED: UPLOAD-777-ALPHA
-            </span>
-          </div>
-          <div className="flex gap-10 text-gray-700">
-            {["PRIVACY", "NETWORK", "SOURCE"].map((link) => (
-              <span
-                key={link}
-                className="text-[10px] uppercase font-black hover:text-[#ff00ff] transition-all tracking-[0.3em]"
-              >
-                {link}
-              </span>
-            ))}
-          </div>
+      {/* footer */}
+      <footer className="max-w-2xl mx-auto px-6 py-10 border-t border-hairline flex items-center justify-between text-xs text-faint">
+        <span>© 2026 Adam Krupa</span>
+        <div className="flex gap-4">
+          <a href="https://pcstyle.dev" className="hover:text-foreground transition-colors">
+            pcstyle.dev
+          </a>
+          <span>·</span>
+          <a
+            href="https://github.com/pcstyle-os/upload"
+            className="hover:text-foreground transition-colors"
+          >
+            github
+          </a>
         </div>
       </footer>
     </main>
