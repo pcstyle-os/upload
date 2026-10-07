@@ -48,7 +48,7 @@ export default function Home() {
           a permanent URL in seconds.
         </p>
         <div className="flex flex-wrap gap-2 mt-8">
-          {["images", "videos", "pdf", "up to 256mb"].map((tag) => (
+          {["images", "videos", "pdf", "up to 1gb per file"].map((tag) => (
             <span
               key={tag}
               className="px-2.5 py-0.5 text-xs text-accent border border-accent-dim/60 rounded"

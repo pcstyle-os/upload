@@ -160,7 +160,7 @@ export const UploadZone = () => {
               )}
             </p>
             <p className="text-xs text-faint">
-              images · videos · pdfs · up to 256mb
+              images · videos · pdfs · up to 1gb per file
             </p>
           </div>
         </div>
