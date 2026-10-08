@@ -44,11 +44,11 @@ export default function Home() {
         </h1>
         <p className="text-muted leading-relaxed max-w-md">
           file uploads for <span className="text-foreground">pcstyle.dev</span>:
-          images, videos and PDFs, straight to the CDN. no accounts, no fuss —
-          a permanent URL in seconds.
+          images, videos, PDFs and HTML, straight to the CDN. preview in your
+          browser, then share a short link.
         </p>
         <div className="flex flex-wrap gap-2 mt-8">
-          {["images", "videos", "pdf", "up to 1gb per file"].map((tag) => (
+          {["images", "videos", "pdf", "html", "up to 1gb per file"].map((tag) => (
             <span
               key={tag}
               className="px-2.5 py-0.5 text-xs text-accent border border-accent-dim/60 rounded"
@@ -83,7 +83,7 @@ export default function Home() {
             {
               n: "03",
               title: "share",
-              body: "every file gets a permanent URL. copy it, open it, or clear it from the list — the link keeps working either way.",
+              body: "every file gets a short link from s.pcstyle.dev. images and HTML open in a preview, with a separate download. short links appear in the shortener’s public recent-links list.",
             },
           ].map((step) => (
             <li

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
+import { previewKind, previewUrl } from "@/lib/files";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -12,12 +13,15 @@ import {
   Trash2,
   Copy,
   ExternalLink,
+  Download,
 } from "lucide-react";
 
 interface UploadedFile {
   name: string;
   size: number;
   url: string;
+  downloadUrl: string;
+  shortened: boolean;
   type: string;
   uploadedAt: string;
 }
@@ -28,7 +32,8 @@ const formatFileSize = (bytes: number): string => {
   return (bytes / (1024 * 1024)).toFixed(2) + " mb";
 };
 
-const fileKind = (type: string): string => {
+const fileKind = (type: string, name: string): string => {
+  if (previewKind(name, type) === "html") return "html";
   if (type.startsWith("image/")) return "img";
   if (type.startsWith("video/")) return "vid";
   if (type === "application/pdf") return "pdf";
@@ -48,7 +53,9 @@ export const UploadZone = () => {
       const newFiles: UploadedFile[] = res.map((r) => ({
         name: r.name,
         size: r.size,
-        url: r.ufsUrl,
+        url: r.serverData?.shareUrl || previewUrl(r),
+        downloadUrl: `/api/files/${encodeURIComponent(r.key)}?${new URLSearchParams({ name: r.name, download: "1" })}`,
+        shortened: r.serverData?.shortened ?? false,
         type:
           files.find((f) => f.name === r.name)?.type ||
           "application/octet-stream",
@@ -134,7 +141,7 @@ export const UploadZone = () => {
           multiple
           onChange={handleFileSelect}
           className="hidden"
-          accept="image/*,video/*,.pdf"
+          accept="image/*,video/*,.pdf,.html,.htm,text/html"
         />
 
         <div className="flex flex-col items-center justify-center text-center space-y-4">
@@ -160,7 +167,7 @@ export const UploadZone = () => {
               )}
             </p>
             <p className="text-xs text-faint">
-              images · videos · pdfs · up to 1gb per file
+              images · videos · pdfs · html · up to 1gb per file
             </p>
           </div>
         </div>
@@ -232,7 +239,7 @@ export const UploadZone = () => {
                   className="flex items-center gap-4 px-4 py-3 group"
                 >
                   <span className="text-xs text-accent-dim w-8">
-                    {fileKind(file.type)}
+                    {fileKind(file.type, file.name)}
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate">{file.name}</p>
@@ -279,13 +286,18 @@ export const UploadZone = () => {
                     className="flex items-center gap-4 px-4 py-3"
                   >
                     <span className="text-xs text-accent w-8">
-                      {fileKind(file.type)}
+                      {fileKind(file.type, file.name)}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm truncate">{file.name}</p>
                       <p className="text-xs text-faint">
                         {formatFileSize(file.size)}
                       </p>
+                      <a href={file.url} target="_blank" rel="noopener noreferrer"
+                        className="block truncate text-xs text-accent hover:underline">
+                        {file.url.replace(/^https:\/\//, "")}
+                      </a>
+                      {!file.shortened && <p className="text-xs text-muted mt-1">short link unavailable — preview link ready</p>}
                     </div>
                     <div className="flex items-center gap-1">
                       <button
@@ -295,7 +307,7 @@ export const UploadZone = () => {
                             ? "text-accent"
                             : "text-faint hover:text-foreground"
                         }`}
-                        title="copy url"
+                        title="copy share link"
                       >
                         {isCopied ? (
                           <Check className="w-4 h-4" />
@@ -308,9 +320,13 @@ export const UploadZone = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-faint hover:text-foreground rounded transition-colors"
-                        title="open file"
+                        title="open preview"
                       >
                         <ExternalLink className="w-4 h-4" />
+                      </a>
+                      <a href={file.downloadUrl} title="download file"
+                        className="p-2 text-faint hover:text-foreground rounded transition-colors">
+                        <Download className="w-4 h-4" />
                       </a>
                       <button
                         onClick={() => removeUploadedFile(index)}

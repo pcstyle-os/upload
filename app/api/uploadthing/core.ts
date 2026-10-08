@@ -1,18 +1,18 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { UploadThingError } from "uploadthing/server";
+import { createShareLink } from "@/lib/share";
 
 const f = createUploadthing();
 
 // FileRouter for upload endpoints
 export const ourFileRouter = {
-    // General file uploader - supports images, videos, PDFs, etc.
+    // HTML and other files use the blob rule; every type allows up to 1 GB.
     fileUploader: f({
         image: { maxFileSize: "1GB", maxFileCount: 10 },
         video: { maxFileSize: "1GB", maxFileCount: 5 },
         pdf: { maxFileSize: "1GB", maxFileCount: 10 },
         blob: { maxFileSize: "1GB", maxFileCount: 10 },
     })
-        .middleware(async ({ req }) => {
+        .middleware(async () => {
             // Add auth logic here if needed
             return { uploadedAt: new Date().toISOString() };
         })
@@ -22,7 +22,8 @@ export const ourFileRouter = {
                 url: file.ufsUrl,
                 name: file.name,
                 size: file.size,
-                uploadedAt: metadata.uploadedAt
+                uploadedAt: metadata.uploadedAt,
+                ...await createShareLink(file),
             };
         }),
 
@@ -30,7 +31,7 @@ export const ourFileRouter = {
     imageUploader: f({
         image: { maxFileSize: "1GB", maxFileCount: 20 },
     })
-        .middleware(async ({ req }) => {
+        .middleware(async () => {
             return { uploadedAt: new Date().toISOString() };
         })
         .onUploadComplete(async ({ metadata, file }) => {
@@ -39,7 +40,8 @@ export const ourFileRouter = {
                 url: file.ufsUrl,
                 name: file.name,
                 size: file.size,
-                uploadedAt: metadata.uploadedAt
+                uploadedAt: metadata.uploadedAt,
+                ...await createShareLink(file),
             };
         }),
 } satisfies FileRouter;
