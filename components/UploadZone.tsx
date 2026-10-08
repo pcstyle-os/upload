@@ -283,7 +283,7 @@ export const UploadZone = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.04 }}
-                    className="flex items-center gap-4 px-4 py-3"
+                    className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 px-4 py-3 sm:flex"
                   >
                     <span className="text-xs text-accent w-8">
                       {fileKind(file.type, file.name)}
@@ -299,7 +299,7 @@ export const UploadZone = () => {
                       </a>
                       {!file.shortened && <p className="text-xs text-muted mt-1">short link unavailable — preview link ready</p>}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="col-start-2 flex items-center justify-end gap-2 sm:gap-1 [&>a]:p-3 [&>button]:p-3 sm:[&>a]:p-2 sm:[&>button]:p-2">
                       <button
                         onClick={() => copyToClipboard(file.url)}
                         className={`p-2 rounded transition-colors ${
