@@ -20,7 +20,7 @@ export default function Home() {
         <li><span className="n">02</span><span><strong>upload.</strong> one click sends the queue to UploadThing&apos;s global CDN.</span></li>
         <li><span className="n">03</span><span><strong>share.</strong> every file gets a short link. images and html open in a preview, with a separate download. short links show up in the shortener&apos;s public recent list.</span></li>
       </ol>
-      <p className="foot"><a href="https://pcstyle.dev">pcstyle.dev</a> <a href="https://github.com/pcstyle-os/upload">github</a></p>
+      <p className="foot"><span>© 2026 Adam Krupa</span> <a href="https://pcstyle.dev">pcstyle.dev</a> <a href="https://github.com/pcstyle-os/upload">github</a></p>
     </Desk>
   );
 }

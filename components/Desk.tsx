@@ -26,7 +26,7 @@ export function Desk({ title, meta, children, wide = false }: {
         <section className="win" aria-labelledby="win-title">
           <header className="bar">
             <span className="k">1</span>
-            <h1 className="t" id="win-title">{title}</h1>
+            <h1 className="t" id="win-title" title={title}>{title}</h1>
             {meta && <span className="meta">{meta}</span>}
             <a className="x" href="https://pcstyle.dev" aria-label="close, back to pcstyle.dev"><Pix name="x" /></a>
           </header>
@@ -34,7 +34,7 @@ export function Desk({ title, meta, children, wide = false }: {
         </section>
       </main>
       <footer className="taskbar">
-        <span className="task"><span className="k">1</span>{title}</span>
+        <span className="task" title={title}><span className="k">1</span>{title}</span>
         <span className="tray">
           <a href="https://pcstyle.dev">pcstyle.dev</a>
           <Clock />

@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 /* pcstyle.dev desktop: tokens and chrome match the homepage
-   (src/styles/global.css and lab/desktop.css). Every size is a multiple of
-   11 so Departure Mono stays on its pixel grid. */
+   (src/styles/global.css and lab/desktop.css). Font sizes are multiples of
+   11px so Departure Mono stays on its pixel grid; bar heights sit on the
+   2px dither cell. */
 :root {
   --bg: #0a0a0b;
   --fg: #e8e6e3;
@@ -246,7 +247,7 @@ svg { fill: currentColor; shape-rendering: crispEdges; }
 .tray a { color: var(--dim); text-decoration: none; line-height: 18px; padding: 0 6px; border: 1px solid var(--line); }
 .tray a:hover { color: var(--accent-2); border-color: var(--accent-2); }
 .tray .clock { color: var(--fg); font-variant-numeric: tabular-nums; }
-.tray .clock::after { content: " CET"; color: var(--faint); }
+.tray .clock .zone { color: var(--faint); }
 
 @media (max-width: 559px) {
   .desk { padding-top: 16px; }
