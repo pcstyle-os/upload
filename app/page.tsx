@@ -18,7 +18,7 @@ export default function Home() {
       <ol className="steps">
         <li><span className="n">01</span><span><strong>drop or browse.</strong> files queue up locally first; nothing leaves your machine yet.</span></li>
         <li><span className="n">02</span><span><strong>upload.</strong> one click sends the queue to UploadThing&apos;s global CDN.</span></li>
-        <li><span className="n">03</span><span><strong>share.</strong> every file gets a short link. images and html open in a preview, with a separate download. short links show up in the shortener&apos;s public recent list.</span></li>
+        <li><span className="n">03</span><span><strong>share.</strong> every file gets a short link. images and html open in a preview, with a separate download. short links stay private: they don&apos;t show up in the shortener&apos;s public recent list.</span></li>
       </ol>
       <p className="foot"><span>© 2026 Adam Krupa</span> <a href="https://pcstyle.dev">pcstyle.dev</a> <a href="https://github.com/pcstyle-os/upload">github</a></p>
     </Desk>
