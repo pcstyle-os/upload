@@ -3,18 +3,7 @@
 import React, { useState, useCallback, useRef } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { previewKind, previewUrl } from "@/lib/files";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Upload,
-  X,
-  Check,
-  Loader2,
-  AlertCircle,
-  Trash2,
-  Copy,
-  ExternalLink,
-  Download,
-} from "lucide-react";
+import { Pix } from "./Pix";
 
 interface UploadedFile {
   name: string;
@@ -120,17 +109,9 @@ export const UploadZone = () => {
   };
 
   return (
-    <div className="w-full space-y-8">
-      {/* drop zone */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className={`relative border border-dashed rounded-lg p-12 transition-colors duration-200 ${
-          isDragging
-            ? "border-accent bg-accent-dim/10"
-            : "border-hairline hover:border-faint"
-        }`}
+    <div>
+      <div
+        className={isDragging ? "drop on" : "drop"}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -140,209 +121,113 @@ export const UploadZone = () => {
           type="file"
           multiple
           onChange={handleFileSelect}
-          className="hidden"
+          hidden
           accept="image/*,video/*,.pdf,.html,.htm,text/html"
         />
-
-        <div className="flex flex-col items-center justify-center text-center space-y-4">
-          <Upload
-            className={`w-7 h-7 transition-colors ${
-              isDragging ? "text-accent" : "text-faint"
-            }`}
-          />
-          <div className="space-y-2">
-            <p className="text-sm text-muted">
-              {isDragging ? (
-                <span className="text-accent">release to queue files</span>
-              ) : (
-                <>
-                  drag &amp; drop files here, or{" "}
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-accent underline underline-offset-4 decoration-accent-dim hover:text-foreground transition-colors"
-                  >
-                    browse
-                  </button>
-                </>
-              )}
-            </p>
-            <p className="text-xs text-faint">
-              images · videos · pdfs · html · up to 1gb per file
-            </p>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* error */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="border border-red-900/60 bg-red-950/30 rounded-lg p-4 flex items-center gap-3"
-          >
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <p className="text-red-300 text-sm">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="ml-auto text-red-400 hover:text-red-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* queue */}
-      <AnimatePresence>
-        {files.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            className="space-y-4"
-          >
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm text-muted">
-                <span className="text-accent-dim">›</span> queue ({files.length}
-                )
-              </h4>
-              <button
-                onClick={handleUpload}
-                disabled={isUploading}
-                className={`px-4 py-2 text-sm font-semibold rounded-md text-white bg-gradient-to-r from-accent-dim to-accent transition-opacity ${
-                  isUploading
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:opacity-90 active:opacity-80"
-                }`}
-              >
-                {isUploading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    uploading…
-                  </span>
-                ) : (
-                  "upload →"
-                )}
+        <Pix name="upload" className="tile" />
+        <p>
+          {isDragging ? (
+            <span className="ok">release to queue files</span>
+          ) : (
+            <>
+              drag &amp; drop files here, or{" "}
+              <button type="button" className="lnk" onClick={() => fileInputRef.current?.click()}>
+                browse
               </button>
-            </div>
+            </>
+          )}
+        </p>
+        <p className="hint">images · videos · pdfs · html · up to 1gb per file</p>
+      </div>
 
-            <ul className="border border-hairline rounded-lg divide-y divide-hairline">
-              {files.map((file, index) => (
-                <motion.li
-                  key={`${file.name}-${index}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: index * 0.04 }}
-                  className="flex items-center gap-4 px-4 py-3 group"
+      {error && (
+        <p className="err" role="alert">
+          {error}
+          <button type="button" className="ico" onClick={() => setError(null)} aria-label="dismiss error">
+            <Pix name="x" />
+          </button>
+        </p>
+      )}
+
+      {files.length > 0 && (
+        <>
+          <h3 className="sect">
+            queue ({files.length})
+            <button type="button" className="btn" onClick={handleUpload} disabled={isUploading}>
+              {isUploading ? "uploading…" : "upload →"}
+            </button>
+          </h3>
+          <ul className="rows">
+            {files.map((file, index) => (
+              <li key={`${file.name}-${index}`}>
+                <span className="kind">{fileKind(file.type, file.name)}</span>
+                <span className="main"><span className="name">{file.name}</span></span>
+                <span className="meta">{formatFileSize(file.size)}</span>
+                <button
+                  type="button"
+                  className="ico del"
+                  onClick={() => removeFile(index)}
+                  disabled={isUploading}
+                  aria-label={`remove ${file.name} from queue`}
                 >
-                  <span className="text-xs text-accent-dim w-8">
-                    {fileKind(file.type, file.name)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{file.name}</p>
-                  </div>
-                  <span className="text-xs text-faint">
-                    {formatFileSize(file.size)}
-                  </span>
-                  <button
-                    onClick={() => removeFile(index)}
-                    disabled={isUploading}
-                    className="opacity-0 group-hover:opacity-100 text-faint hover:text-red-400 transition-all"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </motion.li>
-              ))}
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  <Pix name="x" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
-      {/* uploaded */}
-      <AnimatePresence>
-        {uploadedFiles.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
-          >
-            <h4 className="text-sm text-muted flex items-center gap-2">
-              <Check className="w-4 h-4 text-accent" />
-              uploaded ({uploadedFiles.length})
-            </h4>
-
-            <ul className="border border-hairline rounded-lg divide-y divide-hairline">
-              {uploadedFiles.map((file, index) => {
-                const isCopied = copiedUrl === file.url;
-                return (
-                  <motion.li
-                    key={`uploaded-${file.name}-${index}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.04 }}
-                    className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 px-4 py-3 sm:flex"
-                  >
-                    <span className="text-xs text-accent w-8">
-                      {fileKind(file.type, file.name)}
+      {uploadedFiles.length > 0 && (
+        <>
+          <h3 className="sect">uploaded ({uploadedFiles.length})</h3>
+          <ul className="rows">
+            {uploadedFiles.map((file, index) => {
+              const isCopied = copiedUrl === file.url;
+              return (
+                <li key={`uploaded-${file.name}-${index}`}>
+                  <span className="kind">{fileKind(file.type, file.name)}</span>
+                  <span className="main">
+                    <a className="name" href={file.url} target="_blank" rel="noopener noreferrer">
+                      {file.url.replace(/^https:\/\//, "")}
+                    </a>
+                    <span className="sub">
+                      {file.name} · {formatFileSize(file.size)}
+                      {!file.shortened && " · short link unavailable, preview link ready"}
                     </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{file.name}</p>
-                      <p className="text-xs text-faint">
-                        {formatFileSize(file.size)}
-                      </p>
-                      <a href={file.url} target="_blank" rel="noopener noreferrer"
-                        className="block truncate text-xs text-accent hover:underline">
-                        {file.url.replace(/^https:\/\//, "")}
-                      </a>
-                      {!file.shortened && <p className="text-xs text-muted mt-1">short link unavailable — preview link ready</p>}
-                    </div>
-                    <div className="col-start-2 flex items-center justify-end gap-2 sm:gap-1 [&>a]:p-3 [&>button]:p-3 sm:[&>a]:p-2 sm:[&>button]:p-2">
-                      <button
-                        onClick={() => copyToClipboard(file.url)}
-                        className={`p-2 rounded transition-colors ${
-                          isCopied
-                            ? "text-accent"
-                            : "text-faint hover:text-foreground"
-                        }`}
-                        title="copy share link"
-                      >
-                        {isCopied ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 text-faint hover:text-foreground rounded transition-colors"
-                        title="open preview"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                      <a href={file.downloadUrl} title="download file"
-                        className="p-2 text-faint hover:text-foreground rounded transition-colors">
-                        <Download className="w-4 h-4" />
-                      </a>
-                      <button
-                        onClick={() => removeUploadedFile(index)}
-                        className="p-2 text-faint hover:text-red-400 rounded transition-colors"
-                        title="remove from list"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </motion.li>
-                );
-              })}
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  </span>
+                  <span className="acts">
+                    <button
+                      type="button"
+                      className={isCopied ? "ico on" : "ico"}
+                      onClick={() => copyToClipboard(file.url)}
+                      aria-label="copy share link"
+                      title="copy share link"
+                    >
+                      <Pix name={isCopied ? "check" : "copy"} />
+                    </button>
+                    <a className="ico" href={file.url} target="_blank" rel="noopener noreferrer" aria-label="open preview" title="open preview">
+                      <Pix name="open" />
+                    </a>
+                    <a className="ico" href={file.downloadUrl} aria-label="download file" title="download file">
+                      <Pix name="download" />
+                    </a>
+                    <button
+                      type="button"
+                      className="ico del"
+                      onClick={() => removeUploadedFile(index)}
+                      aria-label="remove from list"
+                      title="remove from list"
+                    >
+                      <Pix name="trash" />
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
     </div>
   );
 };

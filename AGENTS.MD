@@ -7,15 +7,15 @@ This project follows the **pcstyle** high-performance stack and aesthetic.
 - **File Storage**: UploadThing (v7.7.4)
 - **Styling**: Tailwind CSS v4 (CSS-first)
 - **Runtime**: Bun
-- **Animation**: Framer Motion
-- **Icons**: Lucide React
+- **Icons**: pixel SVGs in `components/Pix.tsx`
 
-## 🎨 Design System: pcstyle.dev
-Matches the home site (pcstyle.dev): quiet, narrow single-column mono layout.
-- **Colors**: background #0a0a0b, text #e8e6e3, muted #8a8781, faint #55524d, hairline #26262a, accent #e04fb0, accent-dim #8c1862
-- **Typography**: JetBrains Mono everywhere, lowercase copy, no letter-spacing tricks
-- **Motifs**: `~/pcstyle` wordmark, `→` eyebrow prompts, `##` section labels with hairline rules, pink-bordered tag pills, numbered steps (01/02/03), magenta→pink gradient CTA
-- **No**: CRT overlays, matrix backgrounds, custom cursors, neon glow, uppercase tracking
+## 🎨 Design System: pcstyle.dev desktop
+Matches the home site (pcstyle.dev, repo pc-style/homepage): a pixel desktop on a dithered aurora. Shared with s.pcstyle.dev; keep `components/{Aurora,Desk,Pix,Clock}.tsx` and `app/globals.css` in sync with that repo.
+- **Shell**: `components/Desk.tsx` — aurora wallpaper (`Aurora.tsx`, Bayer 8x8), 30px top bar, one window with a dithered title bar, 26px taskbar with the CET clock
+- **Colors**: bg #0a0a0b, fg #e8e6e3, dim #8a8782, faint #4a4845, line #252327, magenta #8c1862 for text accents, violet #9d5cff for anything clickable or focused; dither ink #e45aa3, tint #9d5cff, dim #2a1a4d
+- **Typography**: Departure Mono (`app/fonts`), lowercase copy, every size a multiple of 11px
+- **Motifs**: `$ ` fact labels, `##` section labels over a dither rule, square corners everywhere, 1px dithered edge as the only shadow
+- **No**: rounded corners, gradients, blur/glow, smooth-scaled pixel art, Lucide-style line icons
 
 ## 📁 File Structure
 ```
@@ -25,9 +25,10 @@ uploader/
 │   │   ├── core.ts       # FileRouter definitions
 │   │   └── route.ts      # API route handler
 │   ├── globals.css       # pcstyle.dev theme tokens
-│   ├── layout.tsx        # Root layout (JetBrains Mono)
+│   ├── layout.tsx        # Root layout (Departure Mono)
 │   └── page.tsx          # Main upload page
 ├── components/
+│   ├── Desk.tsx          # Desktop shell (aurora, bars, window)
 │   └── UploadZone.tsx    # Main upload component
 └── lib/
     └── uploadthing.ts    # Generated helpers

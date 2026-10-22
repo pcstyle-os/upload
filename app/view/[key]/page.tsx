@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { Desk } from "@/components/Desk";
 import { FilePreview } from "@/components/FilePreview";
 import { fileUrl, previewKind } from "@/lib/files";
 
@@ -27,15 +27,8 @@ export default async function FilePage({ params, searchParams }: {
   const kind = previewKind(name, file.headers.get("content-type") || "");
   const filePath = `/api/files/${encodeURIComponent(key)}?${new URLSearchParams({ name })}`;
 
-  return <main className="max-w-6xl mx-auto px-6 py-6 space-y-8">
-    <header className="flex flex-wrap items-center justify-between gap-4 text-sm">
-      <Link href="/" className="text-muted hover:text-foreground">~/pcstyle/upload</Link>
-      <a href={`${filePath}&download=1`} className="text-accent underline underline-offset-4 hover:text-foreground">download ↓</a>
-    </header>
-    <div className="space-y-2">
-      <h1 className="text-lg break-words">{name}</h1>
-      {kind === "html" && <p className="text-xs text-muted">html preview · isolated from the uploader</p>}
-    </div>
+  return <Desk wide title={name} meta={<a href={`${filePath}&download=1`}>download ↓</a>}>
+    {kind === "html" && <p className="hint">html preview · isolated from the uploader</p>}
     <FilePreview kind={kind} name={name} source={kind === "html" ? filePath : source} />
-  </main>;
+  </Desk>;
 }

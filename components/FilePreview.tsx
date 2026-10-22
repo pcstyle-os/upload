@@ -11,7 +11,7 @@ export function FilePreview({ kind, source, name }: {
   const [failed, setFailed] = useState(false);
 
   if (failed || kind === "other") {
-    return <p className="py-20 text-center text-sm text-muted">
+    return <p className="preview empty">
       {failed ? "couldn’t load the preview. try downloading the file." : "no preview for this file type. use download to save it."}
     </p>;
   }
@@ -22,12 +22,12 @@ export function FilePreview({ kind, source, name }: {
       src={source}
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
-      className="w-full h-[75vh] min-h-96 rounded-lg border border-hairline bg-white"
+      className="preview html"
     />;
   }
 
-  return <div className="relative h-[75vh] min-h-96 rounded-lg border border-hairline">
+  return <div className="preview">
     <Image src={source} alt={name} fill unoptimized sizes="100vw"
-      className="object-contain" onError={() => setFailed(true)} />
+      style={{ objectFit: "contain" }} onError={() => setFailed(true)} />
   </div>;
 }
