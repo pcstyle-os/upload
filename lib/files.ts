@@ -48,3 +48,11 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + " mb";
   return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " gb";
 }
+
+// The uploaded name from a Content-Disposition header, preferring filename*.
+export function dispositionName(header: string | null): string {
+  if (!header) return "";
+  const star = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (star) try { return decodeURIComponent(star[1].trim()); } catch {}
+  return /filename="([^"]*)"/i.exec(header)?.[1] || "";
+}

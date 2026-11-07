@@ -1,22 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
 import type { PreviewKind } from "@/lib/files";
 import { Pix } from "./Pix";
+import { Player } from "./Player";
 
-export function FilePreview({ kind, source, name }: {
+export function FilePreview({ kind, source, name, failed: loadFailed = false }: {
   kind: PreviewKind;
   source: string;
   name: string;
+  failed?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState(loadFailed);
 
-  if (failed || kind === "other") {
+  // An iframe can't report HTTP errors, so check the html route first.
+  useEffect(() => {
+    if (kind !== "html") return;
+    const abort = new AbortController();
+    fetch(source, { headers: { Range: "bytes=0-0" }, signal: abort.signal })
+      .then(res => { if (!res.ok) setFailed(true); return res.body?.cancel(); })
+      .catch(() => { if (!abort.signal.aborted) setFailed(true); });
+    return () => abort.abort();
+  }, [kind, source]);
+
+  if (failed || kind === "other" || kind === "text") {
     return <div className="preview empty">
       <Pix name="file" className="tile" />
       <p>{failed ? "the preview didn’t load." : "no preview for this file type."}</p>
-      <p className="hint">use download to save it.</p>
+      <p className="hint">use the download button above to save it.</p>
     </div>;
   }
 
@@ -40,18 +51,12 @@ export function FilePreview({ kind, source, name }: {
     </object>;
   }
 
-  if (kind === "video") {
-    return <video className="preview" src={source} controls preload="metadata" aria-label={name}
-      onError={() => setFailed(true)} />;
+  if (kind === "video" || kind === "audio") {
+    return <Player kind={kind} src={source} name={name} onError={() => setFailed(true)} />;
   }
 
-  if (kind === "audio") {
-    return <div className="preview audio"><audio className="w-full" src={source} controls preload="metadata"
-      aria-label={name} onError={() => setFailed(true)} /></div>;
-  }
-
-  return <div className="preview">
-    <Image src={source} alt={name} fill unoptimized sizes="100vw"
-      style={{ objectFit: "contain" }} onError={() => setFailed(true)} />
+  return <div className="preview pic">
+    {/* eslint-disable-next-line @next/next/no-img-element -- intrinsic size, straight from the CDN */}
+    <img src={source} alt={name} loading="eager" fetchPriority="high" onError={() => setFailed(true)} />
   </div>;
 }

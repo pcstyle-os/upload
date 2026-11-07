@@ -8,7 +8,7 @@ export function FileShell({ children }: { children: React.ReactNode }) {
     <Mat />
     <main className="file">{children}</main>
     <footer className="file-foot">
-      shared with <Link href="/">upload.pcstyle.dev</Link>
+      <span>shared with <Link href="/">upload.pcstyle.dev</Link></span>
     </footer>
   </>;
 }

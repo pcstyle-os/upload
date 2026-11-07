@@ -26,7 +26,7 @@ export function Mat() {
     const cell = 2;
 
     const draw = () => {
-      const W = Math.ceil(innerWidth / cell), H = Math.ceil(innerHeight / cell);
+      const W = Math.ceil(document.documentElement.clientWidth / cell), H = Math.ceil(innerHeight / cell);
       canvas.width = W; canvas.height = H;
       canvas.style.width = `${W * cell}px`;
       canvas.style.height = `${H * cell}px`;

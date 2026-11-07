@@ -150,7 +150,25 @@ test("domain links redirect without fetching, or download exact bytes with a saf
     assert.equal(download.status, 200);
     assert.equal(download.headers.get("content-disposition"), "attachment; filename*=UTF-8''a%20%26%20b%23%3F.pdf");
     assert.deepEqual(new Uint8Array(await download.arrayBuffer()), bytes);
+
+    // a resumed download asks for a range and gets exactly that part back
+    globalThis.fetch = (async (_url, init) => {
+      const range = new Headers(init?.headers).get("range");
+      assert.equal(range, "bytes=2-3");
+      return new Response(bytes.slice(2, 4), { status: 206, headers: { "Content-Range": "bytes 2-3/5", "Content-Length": "2" } });
+    }) as typeof fetch;
+    const part = await directFile(new Request(url, { headers: { Range: "bytes=2-3" } }), { params });
+    assert.equal(part.status, 206);
+    assert.equal(part.headers.get("content-range"), "bytes 2-3/5");
+    assert.equal(part.headers.get("content-disposition"), "attachment; filename*=UTF-8''a%20%26%20b%23%3F.pdf");
+    assert.deepEqual(new Uint8Array(await part.arrayBuffer()), bytes.slice(2, 4));
+    // the uploaded name from the CDN wins over a relabelled link
+    globalThis.fetch = (async () => new Response(bytes, { headers: { "Content-Disposition": "inline; filename=\"x\"; filename*=UTF-8''real%20name.png" } })) as typeof fetch;
+    assert.equal((await directFile(new Request(directUrl({ key: "abc123", name: "evil.html" }, true)), { params })).headers.get("content-disposition"), "attachment; filename*=UTF-8''real%20name.png");
+
     globalThis.fetch = (async () => new Response(null, { status: 404 })) as typeof fetch;
-    assert.equal((await directFile(new Request(url), { params })).status, 404);
+    const missing = await directFile(new Request(url), { params });
+    assert.equal(missing.status, 307);
+    assert.equal(new URL(missing.headers.get("location")!).pathname, "/view/abc123");
   } finally { globalThis.fetch = original; }
 });
