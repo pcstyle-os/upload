@@ -14,7 +14,26 @@ export function previewUrl(file: { key: string; name: string }): string {
 }
 
 export function previewKind(name: string, type: string) {
-  if (/\.html?$/i.test(name) || type.split(";")[0] === "text/html") return "html";
+  type = type.split(";")[0].trim().toLowerCase();
+  if (/\.html?$/i.test(name) || type === "text/html") return "html";
   if (type.startsWith("image/")) return "image";
+  if (type.startsWith("video/")) return "video";
+  if (type.startsWith("audio/")) return "audio";
+  if (type === "application/pdf") return "pdf";
+  if (!type || type === "application/octet-stream") {
+    if (/\.(png|jpe?g|gif|webp|avif|svg|bmp|ico)$/i.test(name)) return "image";
+    if (/\.(mp4|webm|ogv|mov)$/i.test(name)) return "video";
+    if (/\.(mp3|wav|ogg|m4a|aac|flac|opus)$/i.test(name)) return "audio";
+    if (/\.pdf$/i.test(name)) return "pdf";
+  }
   return "other";
+}
+
+export function directUrl(file: { key: string; name: string }, download = false): string {
+  const url = new URL(`/f/${encodeURIComponent(file.key)}`, SITE_ORIGIN);
+  if (download) {
+    url.searchParams.set("download", "1");
+    url.searchParams.set("name", file.name);
+  }
+  return url.href;
 }

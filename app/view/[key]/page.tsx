@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { Desk } from "@/components/Desk";
 import { FilePreview } from "@/components/FilePreview";
-import { fileUrl, previewKind } from "@/lib/files";
+import { FileLinks } from "@/components/FileLinks";
+import { directUrl, fileUrl, previewKind, previewUrl } from "@/lib/files";
 
 export const metadata = { title: "file preview · pcstyle", robots: { index: false, follow: false } };
 
@@ -27,7 +28,8 @@ export default async function FilePage({ params, searchParams }: {
   const kind = previewKind(name, file.headers.get("content-type") || "");
   const filePath = `/api/files/${encodeURIComponent(key)}?${new URLSearchParams({ name })}`;
 
-  return <Desk wide title={name} meta={<a href={`${filePath}&download=1`}>download ↓</a>}>
+  return <Desk wide title={name} meta={<a href={directUrl({ key, name }, true)}>download ↓</a>}>
+    <FileLinks preview={previewUrl({ key, name })} direct={directUrl({ key, name })} download={directUrl({ key, name }, true)} />
     {kind === "html" && <p className="hint">html preview · isolated from the uploader</p>}
     <FilePreview kind={kind} name={name} source={kind === "html" ? filePath : source} />
   </Desk>;

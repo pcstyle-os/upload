@@ -2,13 +2,15 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
-import { previewKind, previewUrl } from "@/lib/files";
+import { directUrl, previewKind, previewUrl } from "@/lib/files";
 import { Pix } from "./Pix";
+import { FileLinks } from "./FileLinks";
 
 interface UploadedFile {
   name: string;
   size: number;
   url: string;
+  directUrl: string;
   downloadUrl: string;
   shortened: boolean;
   type: string;
@@ -22,11 +24,7 @@ const formatFileSize = (bytes: number): string => {
 };
 
 const fileKind = (type: string, name: string): string => {
-  if (previewKind(name, type) === "html") return "html";
-  if (type.startsWith("image/")) return "img";
-  if (type.startsWith("video/")) return "vid";
-  if (type === "application/pdf") return "pdf";
-  return "bin";
+  return { html: "html", image: "img", video: "vid", audio: "aud", pdf: "pdf", other: "bin" }[previewKind(name, type)];
 };
 
 export const UploadZone = () => {
@@ -34,7 +32,6 @@ export const UploadZone = () => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { startUpload, isUploading } = useUploadThing("fileUploader", {
@@ -43,7 +40,8 @@ export const UploadZone = () => {
         name: r.name,
         size: r.size,
         url: r.serverData?.shareUrl || previewUrl(r),
-        downloadUrl: `/api/files/${encodeURIComponent(r.key)}?${new URLSearchParams({ name: r.name, download: "1" })}`,
+        directUrl: directUrl(r),
+        downloadUrl: directUrl(r, true),
         shortened: r.serverData?.shortened ?? false,
         type:
           files.find((f) => f.name === r.name)?.type ||
@@ -98,12 +96,6 @@ export const UploadZone = () => {
     }
   }, [files, startUpload]);
 
-  const copyToClipboard = async (url: string) => {
-    await navigator.clipboard.writeText(url);
-    setCopiedUrl(url);
-    setTimeout(() => setCopiedUrl(null), 2000);
-  };
-
   const removeUploadedFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
@@ -122,7 +114,6 @@ export const UploadZone = () => {
           multiple
           onChange={handleFileSelect}
           hidden
-          accept="image/*,video/*,.pdf,.html,.htm,text/html"
         />
         <Pix name="upload" className="tile" />
         <p>
@@ -137,7 +128,7 @@ export const UploadZone = () => {
             </>
           )}
         </p>
-        <p className="hint">images · videos · pdfs · html · up to 1gb per file</p>
+        <p className="hint">any file · up to 1gb per file · previews for images, video, audio, pdf &amp; html</p>
       </div>
 
       {error && (
@@ -183,11 +174,10 @@ export const UploadZone = () => {
           <h3 className="sect">uploaded ({uploadedFiles.length})</h3>
           <ul className="rows">
             {uploadedFiles.map((file, index) => {
-              const isCopied = copiedUrl === file.url;
               return (
                 <li key={`uploaded-${file.name}-${index}`}>
                   <span className="kind">{fileKind(file.type, file.name)}</span>
-                  <span className="main">
+                  <div className="main">
                     <a className="name" href={file.url} target="_blank" rel="noopener noreferrer">
                       {file.url.replace(/^https:\/\//, "")}
                     </a>
@@ -195,17 +185,9 @@ export const UploadZone = () => {
                       {file.name} · {formatFileSize(file.size)}
                       {!file.shortened && " · short link unavailable, preview link ready"}
                     </span>
-                  </span>
+                    <FileLinks preview={file.url} direct={file.directUrl} download={file.downloadUrl} />
+                  </div>
                   <span className="acts">
-                    <button
-                      type="button"
-                      className={isCopied ? "ico on" : "ico"}
-                      onClick={() => copyToClipboard(file.url)}
-                      aria-label="copy share link"
-                      title="copy share link"
-                    >
-                      <Pix name={isCopied ? "check" : "copy"} />
-                    </button>
                     <a className="ico" href={file.url} target="_blank" rel="noopener noreferrer" aria-label="open preview" title="open preview">
                       <Pix name="open" />
                     </a>

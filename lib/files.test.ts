@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fileUrl, previewKind, previewUrl } from "./files";
+import { directUrl, fileUrl, previewKind, previewUrl } from "./files";
 import { createShareLink } from "./share";
 import { GET } from "../app/api/files/[key]/route";
+import { GET as directFile } from "../app/f/[key]/route";
 import { ourFileRouter } from "../app/api/uploadthing/core";
 import { fileSizeToBytes, isValidSize, matchFileType } from "@uploadthing/shared";
 import * as Micro from "effect/Micro";
@@ -32,7 +33,17 @@ test("HTML extension fallback, MIME detection, and preview URL encoding", () => 
   assert.equal(previewKind("report.HTM", "application/octet-stream"), "html");
   assert.equal(previewKind("report", "text/html; charset=utf-8"), "html");
   assert.equal(previewKind("report.html.png", "image/png"), "image");
-  assert.equal(previewKind("report.pdf", "application/pdf"), "other");
+  assert.equal(previewKind("report.pdf", "application/pdf"), "pdf");
+  for (const [name, type, expected] of [
+    ["clip", "video/mp4", "video"],
+    ["song", "audio/mpeg", "audio"],
+    ["scan.PDF", "application/octet-stream", "pdf"],
+    ["photo.webp", "", "image"],
+    ["clip.mp4", "application/octet-stream", "video"],
+    ["song.mp3", "", "audio"],
+    ["archive.zip", "application/zip", "other"],
+    ["document.docx", "application/octet-stream", "other"],
+  ]) assert.equal(previewKind(name, type), expected, name);
   const url = new URL(previewUrl({ key: "abc123", name: "a & b#?.html" }));
   assert.equal(url.origin, "https://upload.pcstyle.dev");
   assert.equal(url.pathname, "/view/abc123");
@@ -110,5 +121,33 @@ test("invalid keys never fetch, and missing/upstream failures stay errors", asyn
     }
     globalThis.fetch = (async () => { throw new Error("network"); }) as typeof fetch;
     assert.equal((await GET(request, { params: Promise.resolve({ key: "missing" }) })).status, 502);
+  } finally { globalThis.fetch = original; }
+});
+
+test("domain links redirect without fetching, or download exact bytes with a safe filename", async () => {
+  const original = globalThis.fetch;
+  const file = { key: "abc123", name: "a & b#?.pdf" };
+  const params = Promise.resolve({ key: file.key });
+  try {
+    globalThis.fetch = (async () => { assert.fail("redirect must not fetch"); }) as typeof fetch;
+    assert.equal(directUrl(file), "https://upload.pcstyle.dev/f/abc123");
+    const redirect = await directFile(new Request(directUrl(file)), { params });
+    assert.equal(redirect.status, 307);
+    assert.equal(redirect.headers.get("location"), "https://8jtw7yklci.ufs.sh/f/abc123");
+    assert.equal((await directFile(new Request(directUrl(file)), { params: Promise.resolve({ key: "../escape" }) })).status, 400);
+
+    const bytes = new Uint8Array([0, 255, 42, 13, 10]);
+    globalThis.fetch = (async (url) => {
+      assert.equal(url, "https://8jtw7yklci.ufs.sh/f/abc123");
+      return new Response(bytes);
+    }) as typeof fetch;
+    const url = directUrl(file, true);
+    assert.equal(new URL(url).searchParams.get("name"), file.name);
+    const download = await directFile(new Request(url), { params });
+    assert.equal(download.status, 200);
+    assert.equal(download.headers.get("content-disposition"), "attachment; filename*=UTF-8''a%20%26%20b%23%3F.pdf");
+    assert.deepEqual(new Uint8Array(await download.arrayBuffer()), bytes);
+    globalThis.fetch = (async () => new Response(null, { status: 404 })) as typeof fetch;
+    assert.equal((await directFile(new Request(url), { params })).status, 404);
   } finally { globalThis.fetch = original; }
 });
