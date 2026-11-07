@@ -70,7 +70,10 @@ async function load({ params, searchParams }: Props) {
   if (!res?.ok) throw new Error("Could not load the file. Please try again.");
   // The name the file was uploaded with wins over the one in the link.
   const name = (res.name || (typeof query.name === "string" && query.name) || key).slice(0, 255);
-  return { key, name, source, bytes: res.bytes, kind: previewKind(name, res.type), size: res.bytes ? formatFileSize(res.bytes) : "" };
+  const kind = previewKind(name, res.type);
+  const ext = /\.([a-z0-9]{1,8})$/i.exec(name)?.[1].toLowerCase();
+  const label = kind === "other" || kind === "text" || kind === "archive" ? ext || kind : ext && ext !== kind ? `${kind} · ${ext}` : kind;
+  return { key, name, source, bytes: res.bytes, kind, label, size: res.bytes ? formatFileSize(res.bytes) : "" };
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -81,8 +84,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const title = !cdn || res?.status === 404 ? "file not found" : "couldn’t load this file";
     return { title: `${title} · upload.pcstyle.dev`, robots: { index: false, follow: false }, openGraph: { title, siteName: "upload.pcstyle.dev" }, twitter: { card: "summary", title } };
   }
-  const { key, name, source, kind, size } = await load(props);
-  const description = [kind === "other" ? "file" : kind, size, "preview or download"].filter(Boolean).join(" · ");
+  const { key, name, source, kind, label, size } = await load(props);
+  const description = [label, size, "preview or download"].filter(Boolean).join(" · ");
   const card = `https://og.pcstyle.dev/api/og?${new URLSearchParams({ title: name, subtitle: description, icon: "upload", theme: "magenta" })}`;
   return {
     title: `${name} · upload.pcstyle.dev`,
@@ -101,9 +104,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function FilePage(props: Props) {
-  const { key, name, source, bytes, kind, size } = await load(props);
-  const ext = /\.([a-z0-9]{1,8})$/i.exec(name)?.[1].toLowerCase();
-  const label = kind === "other" || kind === "text" || kind === "archive" ? ext || kind : ext && ext !== kind ? `${kind} · ${ext}` : kind;
+  const { key, name, source, bytes, kind, label, size } = await load(props);
   const htmlPath = `/api/files/${encodeURIComponent(key)}?${new URLSearchParams({ name })}`;
 
   return <FileShell>
@@ -153,7 +154,7 @@ async function ZipPreview({ source, name, bytes }: { source: string; name: strin
       {zip.truncated && ` · first ${zip.entries.length} entries shown`}
     </p>
     <ul className="zip-list">
-      {zip.entries.map(entry => {
+      {withParents(zip.entries).map(entry => {
         const parts = entry.name.replace(/\/$/, "").split("/");
         return <li key={entry.name} className={entry.dir ? "dir" : undefined}>
           <span className="n" style={{ paddingLeft: `${(parts.length - 1) * 2}ch` }} title={entry.name}>
@@ -164,4 +165,16 @@ async function ZipPreview({ source, name, bytes }: { source: string; name: strin
       })}
     </ul>
   </div>;
+}
+
+// Zips may omit folder records; add a row for every folder a file sits in,
+// so a nested file never loses its path.
+function withParents(entries: { name: string; size: number; dir: boolean }[]) {
+  const seen = new Set(entries.filter(entry => entry.dir).map(entry => entry.name));
+  return entries.flatMap(entry => {
+    const parts = entry.name.replace(/\/$/, "").split("/");
+    const missing = parts.slice(0, -1).map((_, i) => parts.slice(0, i + 1).join("/") + "/").filter(dir => !seen.has(dir));
+    missing.forEach(dir => seen.add(dir));
+    return [...missing.map(name => ({ name, size: 0, dir: true })), entry];
+  });
 }

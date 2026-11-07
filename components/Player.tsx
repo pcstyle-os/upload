@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pix } from "./Pix";
+import { fit as fitBox, room } from "./fit";
 
 const clock = (s: number) => {
   if (!Number.isFinite(s)) return "--:--";
@@ -42,16 +43,22 @@ export function Player({ kind, src, name, onError }: {
     if (m.error) onError();
     if (kind !== "video") return;
     const v = m as HTMLVideoElement;
+    // The frame takes the picture's exact whole-pixel size, and the player
+    // (controls included) takes its width, so there's no pillarbox.
+    const stage = box.current!.parentElement!;
     const fit = () => {
-      v.style.height = "";
+      v.style.width = v.style.height = box.current!.style.width = "";
       if (!v.videoWidth || document.fullscreenElement) return;
-      const cap = parseFloat(getComputedStyle(v).maxHeight) || Infinity;
-      v.style.height = `${Math.floor(Math.min(v.clientWidth * v.videoHeight / v.videoWidth, cap))}px`;
+      const controls = box.current!.querySelector<HTMLElement>(".controls")!.offsetHeight;
+      const [w, h] = fitBox(v.videoWidth, v.videoHeight, room(stage, v, controls));
+      v.style.width = `${w}px`;
+      v.style.height = `${h}px`;
+      box.current!.style.width = `${w}px`;
     };
     fit();
     v.addEventListener("loadedmetadata", fit);
     const ro = new ResizeObserver(fit);
-    ro.observe(box.current!);
+    ro.observe(stage);
     return () => { v.removeEventListener("loadedmetadata", fit); ro.disconnect(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-time sync only
   }, []);

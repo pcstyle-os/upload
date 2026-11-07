@@ -25,19 +25,31 @@ export function Mat() {
     const tint = color("--accent", "#8c1862");
     const cell = 2;
 
-    // Each edge ramps in over a fixed width in px; the corners combine the
-    // two ramps instead of meeting at a seam.
-    const ramp = 48;
-    const edge = (d: number) => Math.max(0, 1 - d / ramp) ** 2;
+    // Each edge ramps in over the margin beside the content (at most 96px),
+    // so no dot ever sits under the file or its name; the corners combine
+    // the two ramps instead of meeting at a seam.
+    const main = document.querySelector<HTMLElement>("main.file");
+    let ramps = [48, 48, 48, 48];
+    const edge = (d: number, ramp: number) => ramp > 0 ? Math.max(0, 1 - d / ramp) ** 2 : 0;
     const draw = () => {
       const host = canvas.parentElement!;
+      if (main) {
+        const r = main.getBoundingClientRect(), s = getComputedStyle(main);
+        const foot = main.nextElementSibling as HTMLElement | null;
+        ramps = [
+          r.left + parseFloat(s.paddingLeft),
+          host.clientWidth - r.right + parseFloat(s.paddingRight),
+          parseFloat(s.paddingTop),
+          (foot?.offsetHeight ?? 0) + parseFloat(s.paddingBottom),
+        ].map(px => Math.min(48, Math.floor(px / cell)));
+      }
       const W = Math.ceil(host.clientWidth / cell), H = Math.ceil(host.clientHeight / cell);
       canvas.width = W; canvas.height = H;
       canvas.style.width = `${W * cell}px`;
       canvas.style.height = `${H * cell}px`;
       const img = ctx.createImageData(W, H), buf = new Uint32Array(img.data.buffer);
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-        const clear = (1 - edge(x)) * (1 - edge(W - 1 - x)) * (1 - edge(y)) * (1 - edge(H - 1 - y));
+        const clear = (1 - edge(x, ramps[0])) * (1 - edge(W - 1 - x, ramps[1])) * (1 - edge(y, ramps[2])) * (1 - edge(H - 1 - y, ramps[3]));
         const tone = (1 - clear) * 0.42;
         const th = (B8[((y & 7) << 3) + (x & 7)] + 0.5) / 64;
         if (tone > th) buf[y * W + x] = tone - th > 0.28 ? tint : dim;
@@ -45,8 +57,10 @@ export function Mat() {
       ctx.putImageData(img, 0, 0);
     };
     draw();
-    addEventListener("resize", draw);
-    return () => removeEventListener("resize", draw);
+    const ro = new ResizeObserver(draw);
+    ro.observe(document.documentElement);
+    if (main) ro.observe(main);
+    return () => ro.disconnect();
   }, []);
 
   return <div className="sky" aria-hidden="true"><canvas ref={ref} /></div>;
