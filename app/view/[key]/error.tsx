@@ -3,6 +3,7 @@
 import { startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FileShell } from "@/components/FileShell";
+import { Pix } from "@/components/Pix";
 
 export default function PreviewError({ reset }: { reset: () => void }) {
   const router = useRouter();
@@ -11,9 +12,9 @@ export default function PreviewError({ reset }: { reset: () => void }) {
   const retry = () => startTransition(() => { router.refresh(); reset(); });
 
   return <FileShell>
-    <title>couldn’t load this file · upload.pcstyle.dev</title>
     <div className="stage">
       <div className="preview empty">
+        <Pix name="file" className="tile" />
         <h1>couldn’t reach the file service.</h1>
         <p className="hint">it’s usually back in a moment.</p>
         <div className="row">

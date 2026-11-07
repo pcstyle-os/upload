@@ -13,7 +13,7 @@ export function previewUrl(file: { key: string; name: string }): string {
   return url.href;
 }
 
-export type PreviewKind = "html" | "image" | "video" | "audio" | "pdf" | "text" | "other";
+export type PreviewKind = "html" | "image" | "video" | "audio" | "pdf" | "text" | "archive" | "other";
 
 export function previewKind(name: string, type: string): PreviewKind {
   type = type.split(";")[0].trim().toLowerCase();
@@ -22,12 +22,14 @@ export function previewKind(name: string, type: string): PreviewKind {
   if (type.startsWith("video/")) return "video";
   if (type.startsWith("audio/")) return "audio";
   if (type === "application/pdf") return "pdf";
+  if (type === "application/zip" || type === "application/x-zip-compressed") return "archive";
   if (type.startsWith("text/") || /^application\/(json|xml|javascript|x-yaml|yaml|toml|x-sh)$/.test(type)) return "text";
   if (!type || type === "application/octet-stream") {
     if (/\.(png|jpe?g|gif|webp|avif|svg|bmp|ico)$/i.test(name)) return "image";
     if (/\.(mp4|webm|ogv|mov)$/i.test(name)) return "video";
     if (/\.(mp3|wav|ogg|m4a|aac|flac|opus)$/i.test(name)) return "audio";
     if (/\.pdf$/i.test(name)) return "pdf";
+    if (/\.zip$/i.test(name)) return "archive";
     if (/\.(txt|md|json|csv|tsv|log|ya?ml|toml|ini|xml|js|mjs|ts|tsx|jsx|css|py|rb|go|rs|sh|sql|env)$/i.test(name)) return "text";
   }
   return "other";

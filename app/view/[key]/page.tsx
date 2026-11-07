@@ -6,6 +6,7 @@ import { FilePreview } from "@/components/FilePreview";
 import { CopyLink } from "@/components/CopyLink";
 import { Pix } from "@/components/Pix";
 import { directUrl, dispositionName, fileUrl, formatFileSize, previewKind, previewUrl } from "@/lib/files";
+import { listZip } from "@/lib/zip";
 
 type Props = {
   params: Promise<{ key: string }>;
@@ -39,13 +40,21 @@ const probe = cache(async (source: string) => {
   return first && (first.ok || first.status === 404) ? first : probeOnce(source);
 });
 
+// Bytes start..end (inclusive) of the file. Throws when the CDN won't serve
+// the range, so callers never pull a whole large file by accident.
+async function readRange(source: string, start: number, end: number) {
+  const res = await fetch(source, { headers: { Range: `bytes=${start}-${end}` }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000) });
+  if (res.status !== 206 && !(res.status === 200 && start === 0)) {
+    await res.body?.cancel();
+    throw new Error(`range ${start}-${end} returned ${res.status}`);
+  }
+  return new Uint8Array(await res.arrayBuffer()).subarray(0, end - start + 1);
+}
+
 // The first 64 kb of a text file, decoded on the server.
 async function readText(source: string) {
   try {
-    const res = await fetch(source, { headers: { Range: `bytes=0-${TEXT_LIMIT - 1}` }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000) });
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer()).subarray(0, TEXT_LIMIT);
-    return new TextDecoder().decode(bytes, { stream: true });
+    return new TextDecoder().decode(await readRange(source, 0, TEXT_LIMIT - 1), { stream: true });
   } catch {
     return null;
   }
@@ -65,6 +74,13 @@ async function load({ params, searchParams }: Props) {
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
+  // Dead links get their own title and no uploader pitch in the unfurl.
+  const cdn = fileUrl((await props.params).key);
+  const res = cdn ? await probe(cdn) : null;
+  if (!res?.ok) {
+    const title = !cdn || res?.status === 404 ? "file not found" : "couldn’t load this file";
+    return { title: `${title} · upload.pcstyle.dev`, robots: { index: false, follow: false }, openGraph: { title, siteName: "upload.pcstyle.dev" }, twitter: { card: "summary", title } };
+  }
   const { key, name, source, kind, size } = await load(props);
   const description = [kind === "other" ? "file" : kind, size, "preview or download"].filter(Boolean).join(" · ");
   const card = `https://og.pcstyle.dev/api/og?${new URLSearchParams({ title: name, subtitle: description, icon: "upload", theme: "magenta" })}`;
@@ -87,7 +103,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function FilePage(props: Props) {
   const { key, name, source, bytes, kind, size } = await load(props);
   const ext = /\.([a-z0-9]{1,8})$/i.exec(name)?.[1].toLowerCase();
-  const label = kind === "other" || kind === "text" ? ext || kind : ext && ext !== kind ? `${kind} · ${ext}` : kind;
+  const label = kind === "other" || kind === "text" || kind === "archive" ? ext || kind : ext && ext !== kind ? `${kind} · ${ext}` : kind;
   const htmlPath = `/api/files/${encodeURIComponent(key)}?${new URLSearchParams({ name })}`;
 
   return <FileShell>
@@ -110,6 +126,10 @@ export default async function FilePage(props: Props) {
         ? <Suspense fallback={<p className="preview text" role="status">loading text…</p>}>
           <TextPreview source={source} name={name} bytes={bytes} />
         </Suspense>
+        : kind === "archive"
+        ? <Suspense fallback={<p className="preview text" role="status">reading archive…</p>}>
+          <ZipPreview source={source} name={name} bytes={bytes} />
+        </Suspense>
         : <FilePreview kind={kind} name={name} source={kind === "html" ? htmlPath : source} />}
     </div>
   </FileShell>;
@@ -121,4 +141,27 @@ async function TextPreview({ source, name, bytes }: { source: string; name: stri
   return <pre className="preview text" tabIndex={0} aria-label={`contents of ${name}`}>
     {text}{bytes > TEXT_LIMIT && <span className="more">{"\n"}… first 64 kb shown. download for the rest.</span>}
   </pre>;
+}
+
+async function ZipPreview({ source, name, bytes }: { source: string; name: string; bytes: number }) {
+  const zip = bytes ? await listZip(bytes, (start, end) => readRange(source, start, end)).catch(() => null) : null;
+  if (!zip) return <FilePreview kind="other" name={name} source={source} />;
+  const files = zip.entries.filter(entry => !entry.dir).length;
+  return <div className="preview zip" tabIndex={0} aria-label={`contents of ${name}`}>
+    <p className="zip-sum">
+      {files} {files === 1 ? "file" : "files"} · {formatFileSize(zip.unpacked)} unpacked
+      {zip.truncated && ` · first ${zip.entries.length} entries shown`}
+    </p>
+    <ul className="zip-list">
+      {zip.entries.map(entry => {
+        const parts = entry.name.replace(/\/$/, "").split("/");
+        return <li key={entry.name} className={entry.dir ? "dir" : undefined}>
+          <span className="n" style={{ paddingLeft: `${(parts.length - 1) * 2}ch` }} title={entry.name}>
+            {parts.at(-1)}{entry.dir && "/"}
+          </span>
+          {!entry.dir && <span className="s">{formatFileSize(entry.size)}</span>}
+        </li>;
+      })}
+    </ul>
+  </div>;
 }

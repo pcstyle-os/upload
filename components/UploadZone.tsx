@@ -18,7 +18,7 @@ interface UploadedFile {
 }
 
 const fileKind = (type: string, name: string): string => {
-  return { html: "html", image: "img", video: "vid", audio: "aud", pdf: "pdf", text: "txt", other: "bin" }[previewKind(name, type)];
+  return { html: "html", image: "img", video: "vid", audio: "aud", pdf: "pdf", text: "txt", archive: "zip", other: "bin" }[previewKind(name, type)];
 };
 
 export const UploadZone = () => {
@@ -122,7 +122,7 @@ export const UploadZone = () => {
             </>
           )}
         </p>
-        <p className="hint">any file · up to 1gb per file · previews for images, video, audio, pdf, text &amp; html</p>
+        <p className="hint">any file · up to 1gb per file · previews for images, video, audio, pdf, text, zip &amp; html</p>
       </div>
 
       {error && (

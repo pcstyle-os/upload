@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pix } from "./Pix";
 
 const clock = (s: number) => {
@@ -29,6 +29,32 @@ export function Player({ kind, src, name, onError }: {
   const [waiting, setWaiting] = useState(false);
 
   const el = () => media.current!;
+
+  // Metadata can load before hydration, when no handler is attached yet, so
+  // read the element's current state once on mount.
+  useEffect(() => {
+    const m = media.current!;
+    if (m.readyState >= 1) setDuration(m.duration);
+    setTime(m.currentTime);
+    setMuted(m.muted);
+    setPlaying(!m.paused && !m.ended);
+    if (m.buffered.length) setBuffered(m.buffered.end(m.buffered.length - 1));
+    if (m.error) onError();
+    if (kind !== "video") return;
+    const v = m as HTMLVideoElement;
+    const fit = () => {
+      v.style.height = "";
+      if (!v.videoWidth || document.fullscreenElement) return;
+      const cap = parseFloat(getComputedStyle(v).maxHeight) || Infinity;
+      v.style.height = `${Math.floor(Math.min(v.clientWidth * v.videoHeight / v.videoWidth, cap))}px`;
+    };
+    fit();
+    v.addEventListener("loadedmetadata", fit);
+    const ro = new ResizeObserver(fit);
+    ro.observe(box.current!);
+    return () => { v.removeEventListener("loadedmetadata", fit); ro.disconnect(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-time sync only
+  }, []);
   const toggle = () => { const m = el(); if (m.paused || m.ended) void m.play().catch(() => {}); else m.pause(); };
   const seek = (to: number) => { const m = el(); if (Number.isFinite(m.duration)) m.currentTime = Math.min(Math.max(to, 0), m.duration); };
   const mute = () => { el().muted = !el().muted; };
@@ -91,7 +117,7 @@ export function Player({ kind, src, name, onError }: {
             }
           }} />
       </div>
-      <button type="button" className="ico" onClick={mute} aria-label={muted ? "unmute" : "mute"} aria-pressed={muted}>
+      <button type="button" className="ico" onClick={mute} aria-label="mute" aria-pressed={muted}>
         <Pix name={muted ? "mute" : "vol"} />
       </button>
       {kind === "video" && <button type="button" className="ico" onClick={full} aria-label="fullscreen">

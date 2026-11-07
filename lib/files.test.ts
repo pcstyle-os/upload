@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { directUrl, fileUrl, previewKind, previewUrl } from "./files";
 import { createShareLink } from "./share";
+import { listZip } from "./zip";
 import { GET } from "../app/api/files/[key]/route";
 import { GET as directFile } from "../app/f/[key]/route";
 import { ourFileRouter } from "../app/api/uploadthing/core";
@@ -44,7 +45,8 @@ test("HTML extension fallback, MIME detection, and preview URL encoding", () => 
     ["notes.txt", "text/plain;charset=utf-8", "text"],
     ["data", "application/json", "text"],
     ["main.rs", "application/octet-stream", "text"],
-    ["archive.zip", "application/zip", "other"],
+    ["archive.zip", "application/zip", "archive"],
+    ["backup.ZIP", "application/octet-stream", "archive"],
     ["document.docx", "application/octet-stream", "other"],
   ]) assert.equal(previewKind(name, type), expected, name);
   const url = new URL(previewUrl({ key: "abc123", name: "a & b#?.html" }));
@@ -171,4 +173,35 @@ test("domain links redirect without fetching, or download exact bytes with a saf
     assert.equal(missing.status, 307);
     assert.equal(new URL(missing.headers.get("location")!).pathname, "/view/abc123");
   } finally { globalThis.fetch = original; }
+});
+
+test("zip listings come from the central directory, ignoring junk and decoy signatures", async () => {
+  const enc = new TextEncoder();
+  const files: [string, string][] = [["site/", ""], ["site/index.html", "<h1>hi</h1>"], ["site/img/łódź.png", "x".repeat(300)], ["__MACOSX/site/._index.html", "junk"], ["site/.DS_Store", "junk"]];
+  const local: Uint8Array[] = [], central: Uint8Array[] = [];
+  let offset = 0;
+  for (const [name, body] of files) {
+    const n = enc.encode(name), data = enc.encode(body);
+    const lh = new Uint8Array(30 + n.length), l = new DataView(lh.buffer);
+    l.setUint32(0, 0x04034b50, true); l.setUint16(6, 0x800, true); l.setUint32(18, data.length, true); l.setUint32(22, data.length, true); l.setUint16(26, n.length, true); lh.set(n, 30);
+    const ch = new Uint8Array(46 + n.length), c = new DataView(ch.buffer);
+    c.setUint32(0, 0x02014b50, true); c.setUint16(8, 0x800, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, n.length, true); c.setUint32(42, offset, true); ch.set(n, 46);
+    local.push(lh, data); central.push(ch); offset += lh.length + data.length;
+  }
+  // an archive comment that itself contains an end-record signature
+  const comment = new Uint8Array([0x50, 0x4b, 0x05, 0x06, ...new Uint8Array(30)]);
+  const dirSize = central.reduce((sum, part) => sum + part.length, 0);
+  const end = new Uint8Array(22), e = new DataView(end.buffer);
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, dirSize, true); e.setUint32(16, offset, true); e.setUint16(20, comment.length, true);
+  const all = new Uint8Array([...local.flatMap(part => [...part]), ...central.flatMap(part => [...part]), ...end, ...comment]);
+
+  const reads: string[] = [];
+  const zip = await listZip(all.length, async (start, stop) => { reads.push(`${start}-${stop}`); return all.slice(start, stop + 1); });
+  assert.deepEqual(zip, {
+    entries: [{ name: "site/", size: 0, dir: true }, { name: "site/index.html", size: 11, dir: false }, { name: "site/img/łódź.png", size: 300, dir: false }],
+    unpacked: 311,
+    truncated: false,
+  });
+  assert.deepEqual(reads, [`0-${all.length - 1}`], "a small archive needs only the tail read");
+  assert.equal(await listZip(all.length - 1, async (start, stop) => all.slice(start, stop + 1)), null, "a cut-off archive is not a zip");
 });

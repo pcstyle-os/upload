@@ -25,15 +25,20 @@ export function Mat() {
     const tint = color("--accent", "#8c1862");
     const cell = 2;
 
+    // Each edge ramps in over a fixed width in px; the corners combine the
+    // two ramps instead of meeting at a seam.
+    const ramp = 48;
+    const edge = (d: number) => Math.max(0, 1 - d / ramp) ** 2;
     const draw = () => {
-      const W = Math.ceil(document.documentElement.clientWidth / cell), H = Math.ceil(innerHeight / cell);
+      const host = canvas.parentElement!;
+      const W = Math.ceil(host.clientWidth / cell), H = Math.ceil(host.clientHeight / cell);
       canvas.width = W; canvas.height = H;
       canvas.style.width = `${W * cell}px`;
       canvas.style.height = `${H * cell}px`;
       const img = ctx.createImageData(W, H), buf = new Uint32Array(img.data.buffer);
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-        const d = Math.max(Math.abs(x / W - 0.5) * 2, Math.abs(y / H - 0.5) * 2);
-        const tone = Math.max(0, (d - 0.7) / 0.3) ** 2 * 0.42;
+        const clear = (1 - edge(x)) * (1 - edge(W - 1 - x)) * (1 - edge(y)) * (1 - edge(H - 1 - y));
+        const tone = (1 - clear) * 0.42;
         const th = (B8[((y & 7) << 3) + (x & 7)] + 0.5) / 64;
         if (tone > th) buf[y * W + x] = tone - th > 0.28 ? tint : dim;
       }

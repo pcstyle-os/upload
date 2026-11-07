@@ -12,6 +12,7 @@ export function FilePreview({ kind, source, name, failed: loadFailed = false }: 
   failed?: boolean;
 }) {
   const [failed, setFailed] = useState(loadFailed);
+  const [loaded, setLoaded] = useState(false);
 
   // An iframe can't report HTTP errors, so check the html route first.
   useEffect(() => {
@@ -23,7 +24,7 @@ export function FilePreview({ kind, source, name, failed: loadFailed = false }: 
     return () => abort.abort();
   }, [kind, source]);
 
-  if (failed || kind === "other" || kind === "text") {
+  if (failed || kind === "other" || kind === "text" || kind === "archive") {
     return <div className="preview empty">
       <Pix name="file" className="tile" />
       <p>{failed ? "the preview didn’t load." : "no preview for this file type."}</p>
@@ -55,8 +56,10 @@ export function FilePreview({ kind, source, name, failed: loadFailed = false }: 
     return <Player kind={kind} src={source} name={name} onError={() => setFailed(true)} />;
   }
 
-  return <div className="preview pic">
+  return <div className={loaded ? "preview pic" : "preview pic pending"}>
     {/* eslint-disable-next-line @next/next/no-img-element -- intrinsic size, straight from the CDN */}
-    <img src={source} alt={name} loading="eager" fetchPriority="high" onError={() => setFailed(true)} />
+    <img src={source} alt={name} loading="eager" fetchPriority="high"
+      ref={img => { if (img?.complete && img.naturalWidth) setLoaded(true); }}
+      onLoad={() => setLoaded(true)} onError={() => setFailed(true)} />
   </div>;
 }
