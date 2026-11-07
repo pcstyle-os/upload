@@ -59,7 +59,9 @@ export function Player({ kind, src, name, onError }: {
     v.addEventListener("loadedmetadata", fit);
     const ro = new ResizeObserver(fit);
     ro.observe(stage);
-    return () => { v.removeEventListener("loadedmetadata", fit); ro.disconnect(); };
+    // entering or leaving fullscreen doesn't resize the stage
+    document.addEventListener("fullscreenchange", fit);
+    return () => { v.removeEventListener("loadedmetadata", fit); document.removeEventListener("fullscreenchange", fit); ro.disconnect(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-time sync only
   }, []);
   const toggle = () => { const m = el(); if (m.paused || m.ended) void m.play().catch(() => {}); else m.pause(); };

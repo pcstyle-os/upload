@@ -317,7 +317,8 @@ html:has(main.file) { scrollbar-gutter: auto; }
 .player.audio { align-self: stretch; }
 .player .screen { display: block; width: 100%; height: auto; max-height: calc(100dvh - 208px); max-height: round(down, 100dvh - 208px, 1px); object-fit: contain; background: var(--bg); cursor: pointer; }
 .player:fullscreen { justify-content: center; }
-.player:fullscreen .screen { flex: 1; height: auto; }
+.player:fullscreen { width: 100%; height: 100%; }
+.player:fullscreen .screen { flex: 1; min-height: 0; width: 100%; height: auto; max-height: none; }
 .player.audio { align-items: center; gap: 22px; padding: 55px 22px 33px; }
 .player .big-play { display: grid; place-items: center; width: 66px; height: 66px; color: var(--bg); background: var(--accent-2); border: 0; cursor: pointer; }
 .player .big-play svg { width: 24px; height: 24px; }
