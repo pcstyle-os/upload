@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // og tags in <head> for every client, not only the bots Next knows about
+  htmlLimitedBots: /.*/,
 };
 
 export default nextConfig;

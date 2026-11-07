@@ -160,6 +160,7 @@ svg { fill: currentColor; shape-rendering: crispEdges; }
   white-space: nowrap;
 }
 .btn:hover { background: color-mix(in srgb, var(--accent-2) 82%, white); }
+.btn:active { background: var(--accent); color: var(--fg); }
 .btn:disabled { opacity: 0.5; cursor: wait; }
 .lnk { font: inherit; padding: 0; color: var(--fg); background: none; border: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
 .lnk:hover { color: var(--accent-2); text-decoration-color: var(--accent-2); }
@@ -177,6 +178,7 @@ svg { fill: currentColor; shape-rendering: crispEdges; }
 .ico svg { width: 8px; height: 8px; }
 .ico:hover { color: var(--accent-2); border-color: var(--accent-2); }
 .ico.on { color: var(--accent-2); }
+.ico:active { color: var(--fg); background: var(--accent); border-color: var(--accent); }
 .ico.del:hover { color: var(--error); border-color: var(--error); }
 .field {
   width: 100%;
@@ -260,8 +262,109 @@ svg { fill: currentColor; shape-rendering: crispEdges; }
   .tray a { display: none; }
 }
 
-/* /view preview */
-.hint { color: var(--faint); margin-bottom: 6px; }
-.preview { position: relative; display: block; width: 100%; height: 75vh; min-height: 352px; border: 1px solid var(--line); background: var(--bg); }
+/* /view: a shared file, nothing else. The dither lives only in the margins
+   around the content (Mat.tsx); the file sits on plain black. */
+.hint { color: var(--dim); margin-bottom: 6px; }
+/* the shared file page never needs a reserved scrollbar gutter: it would
+   make the viewport odd-sized and push everything onto half pixels */
+html:has(main.file) { scrollbar-gutter: auto; }
+.file { color-scheme: dark; flex: 1; display: flex; flex-direction: column; gap: 11px; width: 100%; max-width: 1320px; margin: 0 auto; padding: 33px 22px 11px; min-height: 0; }
+.file-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 11px 22px; }
+.file-id { flex: 1 1 320px; min-width: 0; }
+.file-name { font-size: 22px; line-height: 33px; font-weight: 400; overflow-wrap: anywhere; }
+.file-meta { color: var(--dim); }
+.file-meta .kind { color: var(--fg); }
+.file-acts { display: flex; align-items: center; gap: 22px; }
+.btn.big { display: inline-flex; align-items: center; gap: 11px; line-height: 33px; padding: 0 22px; }
+.btn.big svg { width: 16px; height: 16px; margin-bottom: 1px; }
+.stage { position: relative; display: flex; flex-direction: column; }
+.preview { position: relative; display: block; width: 100%; height: calc(100dvh - 176px); height: round(down, 100dvh - 176px, 1px); min-height: 352px; border: 0; background: var(--bg); }
 .preview.html { background: #fff; }
-.preview.empty { height: auto; min-height: 0; padding: 66px 10px; text-align: center; color: var(--dim); }
+.preview.pic { display: block; height: auto; min-height: 0; }
+.preview.pic.pending { min-height: 264px; }
+.preview.pic img { display: block; max-width: 100%; max-height: calc(100dvh - 176px); max-height: round(down, 100dvh - 176px, 1px); width: auto; height: auto; object-fit: contain; }
+.preview.text { height: auto; max-height: calc(100dvh - 176px); max-height: round(down, 100dvh - 176px, 1px); min-height: 0; overflow: auto; margin: 0; padding: 11px 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
+.preview.text .more { color: var(--dim); }
+.preview.zip { height: auto; max-height: calc(100dvh - 176px); max-height: round(down, 100dvh - 176px, 1px); min-height: 0; overflow: auto; padding: 11px 0; }
+.zip-sum { color: var(--dim); margin-bottom: 11px; }
+.zip-list { list-style: none; box-shadow: inset 0 1px var(--line); padding-top: 1px; }
+.zip-list li { display: flex; gap: 22px; line-height: 22px; box-shadow: inset 0 -1px var(--line); }
+.zip-list .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zip-list .dir .n { color: var(--dim); }
+.zip-list .s { flex: none; color: var(--dim); font-variant-numeric: tabular-nums; }
+.preview.empty { display: grid; justify-items: start; align-content: start; gap: 0; height: auto; min-height: 264px; padding: 66px 0; text-align: left; color: var(--fg); }
+.preview.empty .tile { width: 48px; height: 48px; color: var(--faint); margin-bottom: 11px; }
+.preview.empty .hint { margin: 0; }
+
+@media (max-width: 899px) { .file-acts { width: 100%; } }
+
+/* desktop: the page is exactly one screen, and the file fills what the
+   header leaves, so nothing scrolls twice and short previews sit in the
+   same box as tall ones */
+@media (min-width: 560px) {
+  html:has(main.file) body { height: 100dvh; }
+  .file { min-height: 0; }
+  .stage { flex: 1; min-height: 0; }
+  .preview, .preview.pic, .preview.empty, .player.audio { height: 100%; min-height: 0; }
+  .preview.text, .preview.zip { max-height: 100%; }
+  .preview.empty { padding-top: 88px; }
+  .player .screen { max-height: none; }
+}
+
+/* the media player: media on black, one control row, a square scrubber.
+   played = violet, buffered = dither, the rest = hairline. */
+.player { display: flex; flex-direction: column; align-self: center; width: 100%; max-width: 100%; outline: none; background: var(--bg); }
+.player.audio { align-self: stretch; }
+.player .screen { display: block; width: 100%; height: auto; max-height: calc(100dvh - 208px); max-height: round(down, 100dvh - 208px, 1px); object-fit: contain; background: var(--bg); cursor: pointer; }
+.player:fullscreen { justify-content: center; }
+.player:fullscreen { width: 100%; height: 100%; }
+.player:fullscreen .screen { flex: 1; min-height: 0; width: 100%; height: auto; max-height: none; }
+.player.audio { align-items: center; gap: 22px; padding: 55px 22px 33px; }
+.player .big-play { display: grid; place-items: center; width: 66px; height: 66px; color: var(--bg); background: var(--accent-2); border: 0; cursor: pointer; }
+.player .big-play svg { width: 24px; height: 24px; }
+.player .big-play:hover { background: color-mix(in srgb, var(--accent-2) 82%, white); }
+.controls { display: flex; align-items: center; gap: 11px; width: 100%; height: 33px; padding: 0 11px; border-top: 1px solid var(--line); }
+.player.audio .controls { max-width: 616px; height: 34px; border: 1px solid var(--line); }
+.controls .ico { width: 28px; height: 28px; color: var(--fg); border-color: transparent; }
+.controls .ico svg { width: 16px; height: 16px; }
+.controls .ico:hover { color: var(--accent-2); border-color: transparent; }
+.controls .time { flex: none; color: var(--fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.controls .time span { color: var(--dim); }
+.scrub { position: relative; flex: 1; min-width: 44px; height: 8px; background: var(--bg); border: 1px solid var(--line); }
+.scrub .loaded, .scrub .played { position: absolute; inset: 0 auto 0 0; }
+.scrub .loaded { width: var(--loaded); background: var(--desk-pat-on) 0 0 / var(--desk-pat-size) repeat; image-rendering: pixelated; }
+.scrub .played { width: var(--played); background: var(--accent-2); }
+.scrub .played::after { content: ""; position: absolute; top: -4px; bottom: -4px; right: -1px; width: 2px; background: var(--fg); }
+.scrub input { position: absolute; inset: -10px 0; width: 100%; height: auto; margin: 0; opacity: 0; cursor: pointer; }
+.scrub:has(input:focus-visible) { outline: 1px solid var(--accent-2); outline-offset: 3px; }
+@supports (width: round(down, 1px, 1px)) {
+  .file { max-width: none; margin: 0; padding-inline: max(22px, round(down, (100% - 1276px) / 2, 1px));
+    /* an odd viewport would leave centred pieces on half pixels */
+    padding-right: calc(max(22px, round(down, (100% - 1276px) / 2, 1px)) + mod(100%, 2px)); }
+}
+.file-foot { padding: 11px 22px 22px; padding-right: calc(22px + mod(100%, 2px)); text-align: center; color: var(--dim); }
+.file-foot span { display: inline-block; line-height: 16px; background: var(--bg); padding: 0 6px; }
+.preview.empty h1 { font-size: 11px; font-weight: 400; }
+.preview.empty .row { display: flex; align-items: center; gap: 22px; margin-top: 22px; }
+.file-foot a, .file-acts .lnk, .preview.empty .row .lnk { color: var(--fg); text-decoration: underline; text-decoration-color: var(--accent-2); text-underline-offset: 3px; }
+.file-foot a:hover, .file-acts .lnk:hover, .preview.empty .row .lnk:hover { color: var(--accent-2); }
+.file-acts .lnk { min-width: 9ch; text-align: left; }
+.file-acts .lnk, .preview.empty .row .lnk { line-height: 33px; }
+
+@media (max-width: 559px) {
+  .file { padding-top: 22px; }
+  .file-acts { width: 100%; }
+  .file-acts .btn.big { margin-left: auto; }
+  .preview { height: 66dvh; height: round(down, 66dvh, 1px); min-height: 264px; }
+  .preview.pic { height: auto; min-height: 0; }
+  .preview.pic img { max-height: 66dvh; max-height: round(down, 66dvh, 1px); }
+  .preview.text, .preview.zip { max-height: 66dvh; max-height: round(down, 66dvh, 1px); padding: 11px 0; }
+  .player .screen { max-height: 66dvh; max-height: round(down, 66dvh, 1px); }
+  /* +1px for the hairline keeps 40px buttons on whole pixels */
+  .controls { height: 45px; }
+  .player.audio .controls { height: 46px; }
+  .controls .ico { width: 40px; height: 40px; }
+  .file-acts .lnk, .preview.empty .row .lnk { display: inline-flex; align-items: center; min-height: 44px; }
+  .btn.big { line-height: 44px; }
+  .btn.big svg { margin-bottom: 0; }
+}
