@@ -2,19 +2,22 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { previewKind } from "@/lib/files";
+import type { PreviewKind } from "@/lib/files";
+import { Pix } from "./Pix";
 
 export function FilePreview({ kind, source, name }: {
-  kind: ReturnType<typeof previewKind>;
+  kind: PreviewKind;
   source: string;
   name: string;
 }) {
   const [failed, setFailed] = useState(false);
 
   if (failed || kind === "other") {
-    return <p className="preview empty">
-      {failed ? "couldn’t load the preview. try downloading the file." : "no preview for this file type. use download to save it."}
-    </p>;
+    return <div className="preview empty">
+      <Pix name="file" className="tile" />
+      <p>{failed ? "the preview didn’t load." : "no preview for this file type."}</p>
+      <p className="hint">use download to save it.</p>
+    </div>;
   }
 
   if (kind === "html") {
@@ -29,7 +32,11 @@ export function FilePreview({ kind, source, name }: {
 
   if (kind === "pdf") {
     return <object data={source} type="application/pdf" className="preview" aria-label={`preview of ${name}`}>
-      <p className="preview empty">this browser cannot display the pdf. use download to save it.</p>
+      <div className="preview empty">
+        <Pix name="file" className="tile" />
+        <p>this browser can’t show pdfs inline.</p>
+        <p className="hint">use download or open original.</p>
+      </div>
     </object>;
   }
 
@@ -39,7 +46,7 @@ export function FilePreview({ kind, source, name }: {
   }
 
   if (kind === "audio") {
-    return <div className="preview empty"><audio className="w-full" src={source} controls preload="metadata"
+    return <div className="preview audio"><audio className="w-full" src={source} controls preload="metadata"
       aria-label={name} onError={() => setFailed(true)} /></div>;
   }
 

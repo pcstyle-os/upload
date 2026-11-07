@@ -1,10 +1,15 @@
 "use client";
 
-import { Desk } from "@/components/Desk";
+import { FileShell } from "@/components/FileShell";
 
 export default function PreviewError({ reset }: { reset: () => void }) {
-  return <Desk title="couldn’t load this file">
-    <p className="err">the file service may be unavailable. try again in a moment.</p>
-    <p className="foot"><button type="button" className="lnk" onClick={reset}>try again</button></p>
-  </Desk>;
+  return <FileShell>
+    <div className="stage">
+      <div className="preview empty">
+        <p>couldn’t reach the file service.</p>
+        <p className="hint">it’s usually back in a moment.</p>
+        <button type="button" className="btn big" onClick={reset}>try again</button>
+      </div>
+    </div>
+  </FileShell>;
 }

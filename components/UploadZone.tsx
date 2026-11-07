@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
-import { directUrl, previewKind, previewUrl } from "@/lib/files";
+import { directUrl, formatFileSize, previewKind, previewUrl } from "@/lib/files";
 import { Pix } from "./Pix";
 import { FileLinks } from "./FileLinks";
 
@@ -17,14 +17,8 @@ interface UploadedFile {
   uploadedAt: string;
 }
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return bytes + " b";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " kb";
-  return (bytes / (1024 * 1024)).toFixed(2) + " mb";
-};
-
 const fileKind = (type: string, name: string): string => {
-  return { html: "html", image: "img", video: "vid", audio: "aud", pdf: "pdf", other: "bin" }[previewKind(name, type)];
+  return { html: "html", image: "img", video: "vid", audio: "aud", pdf: "pdf", text: "txt", other: "bin" }[previewKind(name, type)];
 };
 
 export const UploadZone = () => {
@@ -128,7 +122,7 @@ export const UploadZone = () => {
             </>
           )}
         </p>
-        <p className="hint">any file · up to 1gb per file · previews for images, video, audio, pdf &amp; html</p>
+        <p className="hint">any file · up to 1gb per file · previews for images, video, audio, pdf, text &amp; html</p>
       </div>
 
       {error && (

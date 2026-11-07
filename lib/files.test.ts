@@ -41,6 +41,9 @@ test("HTML extension fallback, MIME detection, and preview URL encoding", () => 
     ["photo.webp", "", "image"],
     ["clip.mp4", "application/octet-stream", "video"],
     ["song.mp3", "", "audio"],
+    ["notes.txt", "text/plain;charset=utf-8", "text"],
+    ["data", "application/json", "text"],
+    ["main.rs", "application/octet-stream", "text"],
     ["archive.zip", "application/zip", "other"],
     ["document.docx", "application/octet-stream", "other"],
   ]) assert.equal(previewKind(name, type), expected, name);
