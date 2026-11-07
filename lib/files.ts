@@ -54,7 +54,8 @@ export function formatFileSize(bytes: number): string {
 // The uploaded name from a Content-Disposition header, preferring filename*.
 export function dispositionName(header: string | null): string {
   if (!header) return "";
-  const star = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  const star = /filename\*\s*=\s*UTF-8'[^']*'([^;]+)/i.exec(header);
   if (star) try { return decodeURIComponent(star[1].trim()); } catch {}
-  return /filename="([^"]*)"/i.exec(header)?.[1] || "";
+  const match = /filename\s*=\s*(?:"((?:\\.|[^"])*)"|([^;\s]+))/i.exec(header);
+  return match ? (match[1] ?? match[2]).replace(/\\(["\\])/g, "$1") : "";
 }

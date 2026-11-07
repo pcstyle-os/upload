@@ -35,12 +35,12 @@ export function Mat() {
       const host = canvas.parentElement!;
       if (main) {
         const r = main.getBoundingClientRect(), s = getComputedStyle(main);
-        const foot = main.nextElementSibling as HTMLElement | null;
         ramps = [
           r.left + parseFloat(s.paddingLeft),
           host.clientWidth - r.right + parseFloat(s.paddingRight),
           parseFloat(s.paddingTop),
-          (foot?.offsetHeight ?? 0) + parseFloat(s.paddingBottom),
+          // the footer's top, or nothing when the content runs past the screen
+          Math.max(0, host.clientHeight - r.bottom + parseFloat(s.paddingBottom)),
         ].map(px => Math.min(48, Math.floor(px / cell)));
       }
       const W = Math.ceil(host.clientWidth / cell), H = Math.ceil(host.clientHeight / cell);

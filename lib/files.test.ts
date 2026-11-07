@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { directUrl, fileUrl, previewKind, previewUrl } from "./files";
+import { directUrl, dispositionName, fileUrl, previewKind, previewUrl } from "./files";
 import { createShareLink } from "./share";
 import { listZip } from "./zip";
 import { GET } from "../app/api/files/[key]/route";
@@ -94,7 +94,7 @@ test("HTML streams inline with a response-level sandbox; downloads preserve byte
     globalThis.fetch = (async (url, options) => {
       assert.equal(url, "https://8jtw7yklci.ufs.sh/f/abc123");
       assert.equal(options?.redirect, "error");
-      return new Response(bytes, { headers: { "Content-Disposition": "attachment", "Set-Cookie": "bad=1" } });
+      return new Response(bytes, { headers: { "Content-Disposition": "attachment; filename*=UTF-8''a%0D%0Ab.html", "Set-Cookie": "bad=1" } });
     }) as typeof fetch;
     const params = Promise.resolve({ key: "abc123" });
     const response = await GET(new Request("https://upload.pcstyle.dev/api/files/abc123"), { params });
@@ -144,7 +144,7 @@ test("domain links redirect without fetching, or download exact bytes with a saf
     const bytes = new Uint8Array([0, 255, 42, 13, 10]);
     globalThis.fetch = (async (url) => {
       assert.equal(url, "https://8jtw7yklci.ufs.sh/f/abc123");
-      return new Response(bytes);
+      return new Response(bytes, { headers: { "Content-Disposition": "inline; filename*=UTF-8''a%20%26%20b%23%3F.pdf" } });
     }) as typeof fetch;
     const url = directUrl(file, true);
     assert.equal(new URL(url).searchParams.get("name"), file.name);
@@ -157,7 +157,7 @@ test("domain links redirect without fetching, or download exact bytes with a saf
     globalThis.fetch = (async (_url, init) => {
       const range = new Headers(init?.headers).get("range");
       assert.equal(range, "bytes=2-3");
-      return new Response(bytes.slice(2, 4), { status: 206, headers: { "Content-Range": "bytes 2-3/5", "Content-Length": "2" } });
+      return new Response(bytes.slice(2, 4), { status: 206, headers: { "Content-Range": "bytes 2-3/5", "Content-Length": "2", "Content-Disposition": "inline; filename*=UTF-8''a%20%26%20b%23%3F.pdf" } });
     }) as typeof fetch;
     const part = await directFile(new Request(url, { headers: { Range: "bytes=2-3" } }), { params });
     assert.equal(part.status, 206);
@@ -167,6 +167,15 @@ test("domain links redirect without fetching, or download exact bytes with a saf
     // the uploaded name from the CDN wins over a relabelled link
     globalThis.fetch = (async () => new Response(bytes, { headers: { "Content-Disposition": "inline; filename=\"x\"; filename*=UTF-8''real%20name.png" } })) as typeof fetch;
     assert.equal((await directFile(new Request(directUrl({ key: "abc123", name: "evil.html" }, true)), { params })).headers.get("content-disposition"), "attachment; filename*=UTF-8''real%20name.png");
+
+    // without a CDN name, a link's ?name still can't relabel the download
+    globalThis.fetch = (async () => new Response(bytes)) as typeof fetch;
+    assert.equal((await directFile(new Request(directUrl({ key: "abc123", name: "evil.html" }, true)), { params })).headers.get("content-disposition"), "attachment; filename*=UTF-8''abc123");
+    for (const [header, expected] of [
+      ["attachment; filename=plain.txt", "plain.txt"],
+      ["inline; filename*=UTF-8'en'r%C3%A9sum%C3%A9.pdf", "résumé.pdf"],
+      ['inline; filename="say \\"hi\\".txt"', 'say "hi".txt'],
+    ]) assert.equal(dispositionName(header), expected, header);
 
     globalThis.fetch = (async () => new Response(null, { status: 404 })) as typeof fetch;
     const missing = await directFile(new Request(url), { params });

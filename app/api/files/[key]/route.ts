@@ -18,7 +18,10 @@ export async function GET(request: Request, context: { params: Promise<{ key: st
   } catch {
     return new Response("File unavailable. Please try again.", { status: 502 });
   }
-  if (upstream.status === 416) return new Response(null, { status: 416, headers: { "Content-Range": upstream.headers.get("content-range") || "" } });
+  if (upstream.status === 416) {
+    await upstream.body?.cancel();
+    return new Response(null, { status: 416, headers: { "Content-Range": upstream.headers.get("content-range") || "" } });
+  }
   if (!upstream.ok) {
     await upstream.body?.cancel();
     return new Response("File unavailable", { status: upstream.status === 404 ? 404 : 502 });
@@ -28,7 +31,7 @@ export async function GET(request: Request, context: { params: Promise<{ key: st
 
   const search = new URL(request.url).searchParams;
   const download = search.get("download") === "1";
-  const name = Array.from(dispositionName(upstream.headers.get("content-disposition")) || search.get("name") || key).slice(0, 255).join("");
+  const name = Array.from(dispositionName(upstream.headers.get("content-disposition")) || key).slice(0, 255).join("");
   const filename = encodeURIComponent(name).replace(/['()*]/g, c => `%${c.charCodeAt(0).toString(16)}`);
 
   // Both the iframe and this response enforce an opaque origin. The response

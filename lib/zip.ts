@@ -13,7 +13,8 @@ const view = (b: Uint8Array) => new DataView(b.buffer, b.byteOffset, b.byteLengt
 
 export async function listZip(size: number, read: Read): Promise<ZipListing | null> {
   if (size < 22) return null;
-  const tailStart = Math.max(0, size - 22 - 0xffff);
+  // room for the longest comment plus the zip64 locator before the end record
+  const tailStart = Math.max(0, size - 22 - 0xffff - 20);
   const tail = await read(tailStart, size - 1);
   const t = view(tail);
 

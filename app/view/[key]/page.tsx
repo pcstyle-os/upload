@@ -44,7 +44,7 @@ const probe = cache(async (source: string) => {
 // the range, so callers never pull a whole large file by accident.
 async function readRange(source: string, start: number, end: number) {
   const res = await fetch(source, { headers: { Range: `bytes=${start}-${end}` }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000) });
-  if (res.status !== 206 && !(res.status === 200 && start === 0)) {
+  if (res.status !== 206) {
     await res.body?.cancel();
     throw new Error(`range ${start}-${end} returned ${res.status}`);
   }
@@ -60,16 +60,15 @@ async function readText(source: string) {
   }
 }
 
-async function load({ params, searchParams }: Props) {
+async function load({ params }: Props) {
   const { key } = await params;
-  const query = await searchParams;
   const source = fileUrl(key);
   if (!source) notFound();
   const res = await probe(source);
   if (res?.status === 404) notFound();
   if (!res?.ok) throw new Error("Could not load the file. Please try again.");
-  // The name the file was uploaded with wins over the one in the link.
-  const name = (res.name || (typeof query.name === "string" && query.name) || key).slice(0, 255);
+  // Only the name the file was uploaded with counts; a link can't relabel it.
+  const name = (res.name || key).slice(0, 255);
   const kind = previewKind(name, res.type);
   const ext = /\.([a-z0-9]{1,8})$/i.exec(name)?.[1].toLowerCase();
   const label = kind === "other" || kind === "text" || kind === "archive" ? ext || kind : ext && ext !== kind ? `${kind} · ${ext}` : kind;
