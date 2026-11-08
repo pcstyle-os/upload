@@ -1,8 +1,6 @@
 import { previewUrl } from "./files";
 
-export async function createShareLink(file: { key: string; name: string }) {
-  const url = previewUrl(file);
-
+export async function createShareLink(file: { key: string; name: string }, url = previewUrl(file)) {
   try {
     const response = await fetch("https://small-horse-338.convex.cloud/api/mutation", {
       method: "POST",

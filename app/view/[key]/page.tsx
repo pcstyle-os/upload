@@ -5,7 +5,9 @@ import { FileShell } from "@/components/FileShell";
 import { FilePreview } from "@/components/FilePreview";
 import { CopyLink } from "@/components/CopyLink";
 import { Pix } from "@/components/Pix";
-import { directUrl, dispositionName, fileUrl, formatFileSize, previewKind, previewUrl } from "@/lib/files";
+import { directUrl, dispositionName, formatFileSize, previewKind, previewUrl } from "@/lib/files";
+import { fileSource } from "@/lib/storage";
+import { b2File } from "@/lib/retention";
 import { listZip } from "@/lib/zip";
 
 type Props = {
@@ -20,7 +22,12 @@ const TEXT_LIMIT = 64 * 1024;
 // CDN blip doesn't show the error page.
 async function probeOnce(source: string) {
   try {
-    const res = await fetch(source, { headers: { Range: "bytes=0-0" }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(8_000) });
+    let res = await fetch(source, { headers: { Range: "bytes=0-0" }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(8_000) });
+    // An empty B2 object has no byte 0; read its headers without a Range instead.
+    if (res.status === 416) {
+      await res.body?.cancel();
+      res = await fetch(source, { redirect: "error", cache: "no-store", signal: AbortSignal.timeout(8_000) });
+    }
     await res.body?.cancel();
     const total = res.status === 206 ? res.headers.get("content-range")?.split("/")[1] : res.headers.get("content-length");
     return {
@@ -62,7 +69,7 @@ async function readText(source: string) {
 
 async function load({ params }: Props) {
   const { key } = await params;
-  const source = fileUrl(key);
+  const source = await fileSource(key);
   if (!source) notFound();
   const res = await probe(source);
   if (res?.status === 404) notFound();
@@ -77,7 +84,7 @@ async function load({ params }: Props) {
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   // Dead links get their own title and no uploader pitch in the unfurl.
-  const cdn = fileUrl((await props.params).key);
+  const cdn = await fileSource((await props.params).key);
   const res = cdn ? await probe(cdn) : null;
   if (!res?.ok) {
     const title = !cdn || res?.status === 404 ? "file not found" : "couldn’t load this file";
@@ -113,6 +120,7 @@ export default async function FilePage(props: Props) {
         <p className="file-meta">
           <span className="kind">{label}</span>{size && ` · ${size}`}
           {kind === "html" && " · sandboxed preview"}
+          {b2File(key) && ` · expires ${new Date(b2File(key)!.expiresAt).toISOString().slice(0, 10)}`}
         </p>
       </div>
       <div className="file-acts">
@@ -136,7 +144,7 @@ export default async function FilePage(props: Props) {
 }
 
 async function TextPreview({ source, name, bytes }: { source: string; name: string; bytes: number }) {
-  const text = await readText(source);
+  const text = bytes === 0 ? "" : await readText(source);
   if (text === null) return <FilePreview kind="other" failed name={name} source={source} />;
   return <pre className="preview text" tabIndex={0} aria-label={`contents of ${name}`}>
     {text}{bytes > TEXT_LIMIT && <span className="more">{"\n"}… first 64 kb shown. download for the rest.</span>}

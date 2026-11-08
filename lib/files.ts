@@ -13,6 +13,10 @@ export function previewUrl(file: { key: string; name: string }): string {
   return url.href;
 }
 
+export function collectionUrl(key: string): string {
+  return new URL(`/c/${encodeURIComponent(key)}`, SITE_ORIGIN).href;
+}
+
 export type PreviewKind = "html" | "image" | "video" | "audio" | "pdf" | "text" | "archive" | "other";
 
 export function previewKind(name: string, type: string): PreviewKind {

@@ -4,23 +4,23 @@ import { useState } from "react";
 
 export function FileLinks({ preview, direct, download }: {
   preview: string;
-  direct: string;
-  download: string;
+  direct?: string;
+  download?: string;
 }) {
   const [mode, setMode] = useState("preview");
   const [status, setStatus] = useState("");
-  const url = mode === "direct" ? direct : mode === "download" ? download : preview;
+  const url = (mode === "direct" ? direct : mode === "download" ? download : preview) || preview;
 
   return <div className="my-2 min-w-0">
     <div className="flex flex-wrap items-center gap-2">
-      <label className="flex items-center gap-2">
+      {direct || download ? <label className="flex items-center gap-2">
         link
         <select className="field" value={mode} onChange={event => { setMode(event.target.value); setStatus(""); }}>
           <option value="preview">preview</option>
-          <option value="direct">direct · redirect to file</option>
-          <option value="download">download · save file</option>
+          {direct && <option value="direct">direct · redirect to file</option>}
+          {download && <option value="download">download · save file</option>}
         </select>
-      </label>
+      </label> : <span>collection preview</span>}
       <button type="button" className="btn" onClick={async () => {
         try {
           await navigator.clipboard.writeText(url);
