@@ -36,7 +36,7 @@ export default async function CollectionPage({ params }: Props) {
       {await Promise.all(collection.files.map(async file => {
         const expired = Date.parse(file.expiresAt) <= collection.loadedAt;
         const kind = previewKind(file.name, file.type);
-        const source = !expired && kind === "image" ? await fileSource(file.key) : null;
+        const source = !expired && kind === "image" && file.size <= 10 * 1024 ** 2 ? await fileSource(file.key) : null;
         return <li key={file.key} className="flex min-w-0 flex-col border border-[var(--line)] bg-[var(--bg)] p-3">
           {!expired && <Link href={`/view/${encodeURIComponent(file.key)}`} className="mb-3 grid h-40 place-items-center border-b border-[var(--line)]" aria-label={`preview ${file.name}`}>
             {source ? <Image src={source} alt={file.name} width={320} height={160} unoptimized className="h-40 w-full object-contain" />
