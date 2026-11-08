@@ -1,26 +1,55 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { directUrl, dispositionName, fileUrl, previewKind, previewUrl } from "./files";
+import { collectionUrl, directUrl, dispositionName, fileUrl, previewKind, previewUrl } from "./files";
 import { createShareLink } from "./share";
 import { listZip } from "./zip";
 import { GET } from "../app/api/files/[key]/route";
 import { GET as directFile } from "../app/f/[key]/route";
-import { ourFileRouter } from "../app/api/uploadthing/core";
-import { fileSizeToBytes, isValidSize, matchFileType } from "@uploadthing/shared";
-import * as Micro from "effect/Micro";
+import { b2File, MAX_FILE_SIZE, retentionDays } from "./retention";
+import { POST as upload } from "../app/api/uploads/route";
+import { readCollection } from "./storage";
 
-test("HTML maps to the blob rule and all routes retain the 1 GB boundary", () => {
-  for (const name of ["page.html", "page.htm"]) {
-    assert.equal(Micro.runSync(matchFileType({ name, type: "text/html", size: 42 }, ["image", "video", "pdf", "blob"])), "blob");
+test("batch completion rejects empty, duplicate, malformed and oversized collections", async () => {
+  const key = `b2_90_${Date.now() + 86400_000}_${"a".repeat(32)}`;
+  for (const keys of [[], [key, key], [key, "../escape"], [null], "not an array", Array.from({ length: 101 }, (_, i) => `b2_90_${Date.now() + 86400_000}_${i.toString(16).padStart(32, "0")}`)]) {
+    const response = await upload(new Request("https://upload.pcstyle.dev/api/uploads", {
+      method: "POST", headers: { Origin: "https://upload.pcstyle.dev", "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "complete", keys }),
+    }));
+    assert.equal(response.status, 400);
   }
-  for (const route of Object.values(ourFileRouter)) {
-    for (const config of Object.values(route.routerConfig)) {
-      const limit = Micro.runSync(fileSizeToBytes(config.maxFileSize));
-      assert.equal(limit, 1073741824);
-      assert.equal(isValidSize({ size: 1073741824 } as File, 0, limit), true);
-      assert.equal(isValidSize({ size: 1073741825 } as File, 0, limit), false);
-    }
+  assert.equal(collectionUrl("a/b?c"), "https://upload.pcstyle.dev/c/a%2Fb%3Fc");
+  assert.equal(await readCollection(`b2_90_1700000000000_${"a".repeat(32)}`), null);
+});
+
+test("uploads enforce size boundaries and server-selected retention", async () => {
+  for (const [size, days] of [[0, 90], [10 * 1024 ** 2, 90], [10 * 1024 ** 2 + 1, 30], [100 * 1024 ** 2, 30], [100 * 1024 ** 2 + 1, 7], [MAX_FILE_SIZE, 7]]) {
+    assert.equal(retentionDays(size), days);
   }
+  for (const size of [-1, 0.5, MAX_FILE_SIZE + 1, "20"]) {
+    const response = await upload(new Request("https://upload.pcstyle.dev/api/uploads", {
+      method: "POST", headers: { Origin: "https://upload.pcstyle.dev", "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "prepare", name: "page.html", type: "text/html", size }),
+    }));
+    assert.equal(response.status, 400);
+  }
+  assert.equal((await upload(new Request("https://upload.pcstyle.dev/api/uploads", { method: "POST", headers: { Origin: "https://evil.test" } }))).status, 403);
+  // A public preview host can differ from the internal Next.js request URL.
+  assert.equal((await upload(new Request("http://localhost:3000/api/uploads", {
+    method: "POST", headers: { Origin: "https://preview.vercel.app", "X-Forwarded-Host": "preview.vercel.app" },
+    body: "not json",
+  }))).status, 400);
+});
+
+test("expired B2 files are never redirected or fetched; legacy keys still work", async () => {
+  const key = `b2_7_1700000000000_${"a".repeat(32)}`;
+  assert.equal(b2File(key, 1700000000000)?.expired, true);
+  assert.equal(b2File(key, 1699999999999)?.expired, false);
+  assert.equal(b2File(key)?.path, `uploads/7d/${key}`);
+  for (const key of ["b2_7_1700000000000_../escape", "b2_365_1700000000000_" + "a".repeat(32)]) assert.equal(b2File(key), null);
+  const params = Promise.resolve({ key });
+  assert.equal((await directFile(new Request(`https://upload.pcstyle.dev/f/${key}`), { params })).status, 404);
+  assert.equal((await GET(new Request(`https://upload.pcstyle.dev/api/files/${key}`), { params })).status, 404);
 });
 
 test("file keys cannot escape the app CDN or inject URL components", () => {
@@ -71,6 +100,11 @@ test("shortener receives the preview URL, and failures retain a working link", a
     assert.deepEqual(await createShareLink(file), {
       shareUrl: "https://s.pcstyle.dev/aB12cd", previewUrl: "https://upload.pcstyle.dev/view/abc123?name=test.html", shortened: true,
     });
+    globalThis.fetch = (async (_url, options) => {
+      assert.equal(JSON.parse(String(options?.body)).args.url, "https://upload.pcstyle.dev/c/collection-key");
+      return Response.json({ status: "success", value: { shortUrl: "https://s.pcstyle.dev/group1" } });
+    }) as typeof fetch;
+    assert.equal((await createShareLink(file, collectionUrl("collection-key"))).previewUrl, "https://upload.pcstyle.dev/c/collection-key");
     for (const response of [
       new Response("unavailable", { status: 503 }),
       Response.json({ status: "error", errorMessage: "unavailable" }),

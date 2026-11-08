@@ -1,9 +1,10 @@
-import { dispositionName, fileUrl } from "@/lib/files";
+import { dispositionName } from "@/lib/files";
+import { fileSource } from "@/lib/storage";
 
 export async function GET(request: Request, context: { params: Promise<{ key: string }> }) {
   const { key } = await context.params;
-  const source = fileUrl(key);
-  if (!source) return new Response("Invalid file", { status: 400 });
+  const source = await fileSource(key);
+  if (!source) return new Response("File missing or expired", { status: key.startsWith("b2_") ? 404 : 400 });
 
   // Forward Range so downloads show progress and can resume.
   const range = request.headers.get("range");

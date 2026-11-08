@@ -4,7 +4,7 @@ This project follows the **pcstyle** high-performance stack and aesthetic.
 
 ## 🛠 Technical Stack
 - **Framework**: Next.js 16 (App Router)
-- **File Storage**: UploadThing (v7.7.4)
+- **File Storage**: private Backblaze B2 via S3 signed URLs (legacy UploadThing links remain readable)
 - **Styling**: Tailwind CSS v4 (CSS-first)
 - **Runtime**: Bun
 - **Icons**: pixel SVGs in `components/Pix.tsx`
@@ -21,9 +21,8 @@ Matches the home site (pcstyle.dev, repo pc-style/homepage): a pixel desktop on 
 ```
 uploader/
 ├── app/
-│   ├── api/uploadthing/
-│   │   ├── core.ts       # FileRouter definitions
-│   │   └── route.ts      # API route handler
+│   ├── api/uploads/
+│   │   └── route.ts      # Prepare signed uploads and verify completion
 │   ├── globals.css       # pcstyle.dev theme tokens
 │   ├── layout.tsx        # Root layout (Departure Mono)
 │   └── page.tsx          # Main upload page
@@ -31,13 +30,18 @@ uploader/
 │   ├── Desk.tsx          # Desktop shell (aurora, bars, window)
 │   └── UploadZone.tsx    # Main upload component
 └── lib/
-    └── uploadthing.ts    # Generated helpers
+    ├── storage.ts        # Server-only B2 signing and object verification
+    └── retention.ts      # Size limits, expiry tiers and B2 key parsing
 ```
 
 ## 🔧 Configuration Required
-Add your UploadThing secret to `.env.local`:
+Add the B2 configuration to `.env.local` (see README for bucket CORS and lifecycle rules):
 ```env
-UPLOADTHING_TOKEN=your_uploadthing_token_here
+B2_KEY_ID=your_application_key_id
+B2_APPLICATION_KEY=your_application_key
+B2_BUCKET=your_bucket_name
+B2_ENDPOINT=https://s3.eu-central-003.backblazeb2.com
+B2_REGION=eu-central-003
 ```
 
 ## 🚀 Commands
